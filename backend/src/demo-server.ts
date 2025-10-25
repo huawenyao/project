@@ -8,7 +8,7 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN || "http://localhost:12002",
+    origin: process.env.CORS_ORIGIN || "http://localhost:12003",
     methods: ["GET", "POST"]
   }
 });
@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || "http://localhost:12002",
+  origin: process.env.CORS_ORIGIN || "http://localhost:12003",
   credentials: true
 }));
 app.use(morgan('combined'));
