@@ -80,15 +80,15 @@
 
 ### Frontend State Management
 
-- [ ] T037 [P] Create Zustand visualizationStore in frontend/src/stores/visualizationStore.ts
-- [ ] T038 [P] Create Zustand agentStatusStore in frontend/src/stores/agentStatusStore.ts
-- [ ] T039 [P] Create Zustand decisionStore in frontend/src/stores/decisionStore.ts
-- [ ] T040 [P] Create Zustand themeStore with warm/tech themes in frontend/src/stores/themeStore.ts
-- [ ] T041 [P] Create Zustand settingsStore in frontend/src/stores/settingsStore.ts
+- [X] T037 [P] Create Zustand visualizationStore in frontend/src/stores/visualizationStore.ts
+- [X] T038 [P] Create Zustand agentStatusStore in frontend/src/stores/agentStatusStore.ts
+- [X] T039 [P] Create Zustand decisionStore in frontend/src/stores/decisionStore.ts
+- [X] T040 [P] Create Zustand themeStore with warm/tech themes in frontend/src/stores/themeStore.ts
+- [X] T041 [P] Create Zustand settingsStore in frontend/src/stores/settingsStore.ts
 
 ### Frontend Services & Hooks
 
-- [ ] T042 Create WebSocket client service in frontend/src/services/WebSocketService.ts
+- [X] T042 Create WebSocket client service in frontend/src/services/WebSocketService.ts
 - [ ] T043 [P] Create VisualizationAPI REST client in frontend/src/services/VisualizationAPI.ts
 - [ ] T044 [P] Create MetricsService for anonymized tracking in frontend/src/services/MetricsService.ts
 - [ ] T045 Create useWebSocket hook with reconnection logic in frontend/src/hooks/useWebSocket.ts
