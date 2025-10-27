@@ -1,0 +1,1339 @@
+openapi: 3.0.3
+info:
+  title: AI思考过程可视化系统 REST API
+  description: |
+    REST API契约用于管理构建会话历史数据、决策记录查询、Agent配置以及用户偏好设置。
+
+    **认证方式**: 所有端点需要JWT Bearer Token认证
+
+    **速率限制**:
+    - 标准端点: 100 req/min/user
+    - 查询端点 (GET): 200 req/min/user
+    - 指标提交 (POST /api/visualization/metrics): 1000 req/min/user
+
+    **错误响应格式**: 所有错误响应遵循统一格式
+  version: 1.0.0
+  contact:
+    name: AI Builder Studio Team
+    email: support@ai-builder-studio.com
+
+servers:
+  - url: http://localhost:3001
+    description: 本地开发环境
+  - url: https://api.ai-builder-studio.com
+    description: 生产环境
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Sessions
+    description: 构建会话管理
+  - name: Decisions
+    description: 决策记录查询
+  - name: Agents
+    description: Agent配置管理
+  - name: Settings
+    description: 用户设置
+  - name: Metrics
+    description: 用户交互指标
+
+paths:
+  /api/visualization/sessions:
+    get:
+      tags:
+        - Sessions
+      summary: 获取构建会话列表
+      description: |
+        获取用户的构建会话列表，支持分页、过滤热数据/冷数据、按状态筛选。
+        - 热数据 (最近30天): 响应时间 <500ms
+        - 冷数据 (>30天): 响应时间 <3s，从对象存储加载
+      operationId: listSessions
+      parameters:
+        - name: page
+          in: query
+          description: 页码 (从1开始)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: 每页记录数
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: status
+          in: query
+          description: 按状态过滤
+          schema:
+            type: string
+            enum: [pending, in_progress, completed, failed, cancelled]
+        - name: dataType
+          in: query
+          description: 数据类型过滤
+          schema:
+            type: string
+            enum: [hot, cold, all]
+            default: all
+        - name: startDate
+          in: query
+          description: 开始日期 (ISO 8601格式)
+          schema:
+            type: string
+            format: date-time
+            example: "2025-10-01T00:00:00Z"
+        - name: endDate
+          in: query
+          description: 结束日期 (ISO 8601格式)
+          schema:
+            type: string
+            format: date-time
+            example: "2025-10-27T23:59:59Z"
+        - name: projectId
+          in: query
+          description: 按项目ID过滤
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 成功返回会话列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      sessions:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/BuildSessionSummary'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+                      dataSource:
+                        type: string
+                        enum: [database, archive, mixed]
+                        description: 数据来源说明
+              examples:
+                hotData:
+                  summary: 热数据查询示例
+                  value:
+                    success: true
+                    data:
+                      sessions:
+                        - sessionId: "550e8400-e29b-41d4-a716-446655440000"
+                          projectId: "660e8400-e29b-41d4-a716-446655440001"
+                          projectName: "电商管理系统"
+                          userId: "user_123"
+                          status: "completed"
+                          startTime: "2025-10-27T10:30:00Z"
+                          endTime: "2025-10-27T10:45:32Z"
+                          duration: 932
+                          agentsCount: 5
+                          decisionsCount: 12
+                          isArchived: false
+                          dataSource: "database"
+                        - sessionId: "550e8400-e29b-41d4-a716-446655440002"
+                          projectId: "660e8400-e29b-41d4-a716-446655440003"
+                          projectName: "博客平台"
+                          userId: "user_123"
+                          status: "failed"
+                          startTime: "2025-10-26T14:20:00Z"
+                          endTime: "2025-10-26T14:28:15Z"
+                          duration: 495
+                          agentsCount: 3
+                          decisionsCount: 7
+                          errorSummary: "DatabaseAgent连接超时"
+                          isArchived: false
+                          dataSource: "database"
+                      pagination:
+                        currentPage: 1
+                        totalPages: 5
+                        totalItems: 94
+                        itemsPerPage: 20
+                        hasNext: true
+                        hasPrevious: false
+                      dataSource: "database"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/visualization/sessions/{sessionId}:
+    get:
+      tags:
+        - Sessions
+      summary: 获取单个会话详情
+      description: |
+        获取指定构建会话的完整详细信息，包括所有Agent状态、决策记录、协作事件。
+        如果会话已归档，将从对象存储按需加载。
+      operationId: getSessionDetail
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: 会话唯一标识符
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 成功返回会话详情
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/BuildSessionDetail'
+              examples:
+                completedSession:
+                  summary: 已完成的会话详情
+                  value:
+                    success: true
+                    data:
+                      sessionId: "550e8400-e29b-41d4-a716-446655440000"
+                      projectId: "660e8400-e29b-41d4-a716-446655440001"
+                      projectName: "电商管理系统"
+                      userId: "user_123"
+                      status: "completed"
+                      startTime: "2025-10-27T10:30:00Z"
+                      endTime: "2025-10-27T10:45:32Z"
+                      duration: 932
+                      isArchived: false
+                      dataSource: "database"
+                      agents:
+                        - agentId: "agent_ui_001"
+                          agentType: "UIAgent"
+                          status: "completed"
+                          currentTask: "UI组件生成完成"
+                          progress: 100
+                          startTime: "2025-10-27T10:30:05Z"
+                          endTime: "2025-10-27T10:38:12Z"
+                          duration: 487
+                          retryCount: 0
+                        - agentId: "agent_backend_001"
+                          agentType: "BackendAgent"
+                          status: "completed"
+                          currentTask: "API接口创建完成"
+                          progress: 100
+                          startTime: "2025-10-27T10:35:00Z"
+                          endTime: "2025-10-27T10:42:30Z"
+                          duration: 450
+                          retryCount: 1
+                      decisions:
+                        - decisionId: "decision_001"
+                          agentId: "agent_ui_001"
+                          agentType: "UIAgent"
+                          title: "选择React作为前端框架"
+                          importance: "high"
+                          reasoning: "React拥有丰富的生态系统和组件库，团队熟悉度高"
+                          alternatives: ["Vue.js", "Angular"]
+                          impacts: ["开发效率提升", "维护成本降低"]
+                          timestamp: "2025-10-27T10:32:15Z"
+                          hasPreview: true
+                      collaborations:
+                        - eventId: "collab_001"
+                          sourceAgentId: "agent_db_001"
+                          sourceAgentType: "DatabaseAgent"
+                          targetAgentId: "agent_backend_001"
+                          targetAgentType: "BackendAgent"
+                          dataType: "database_schema"
+                          dataSummary: "包含5个表: users, products, orders, payments, reviews"
+                          timestamp: "2025-10-27T10:35:00Z"
+                      errors: []
+                      overallProgress: 100
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/visualization/sessions/{sessionId}/replay:
+    get:
+      tags:
+        - Sessions
+      summary: 获取会话回放数据
+      description: |
+        获取构建会话的完整时间序列数据用于前端回放功能。
+        返回按时间排序的所有事件（状态变化、决策产生、协作事件、错误发生）。
+      operationId: getSessionReplay
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          description: 会话唯一标识符
+          schema:
+            type: string
+            format: uuid
+        - name: speed
+          in: query
+          description: 回放速度倍数
+          schema:
+            type: number
+            minimum: 0.5
+            maximum: 10
+            default: 1.0
+      responses:
+        '200':
+          description: 成功返回回放数据
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      sessionId:
+                        type: string
+                        format: uuid
+                      totalDuration:
+                        type: integer
+                        description: 总时长（秒）
+                      events:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ReplayEvent'
+              examples:
+                replayData:
+                  summary: 回放数据示例
+                  value:
+                    success: true
+                    data:
+                      sessionId: "550e8400-e29b-41d4-a716-446655440000"
+                      totalDuration: 932
+                      events:
+                        - timestamp: "2025-10-27T10:30:00Z"
+                          offsetMs: 0
+                          eventType: "session_started"
+                          data:
+                            projectName: "电商管理系统"
+                        - timestamp: "2025-10-27T10:30:05Z"
+                          offsetMs: 5000
+                          eventType: "agent_status_update"
+                          data:
+                            agentId: "agent_ui_001"
+                            agentType: "UIAgent"
+                            status: "in_progress"
+                            currentTask: "正在分析用户需求..."
+                            progress: 10
+                        - timestamp: "2025-10-27T10:32:15Z"
+                          offsetMs: 135000
+                          eventType: "decision_created"
+                          data:
+                            decisionId: "decision_001"
+                            agentType: "UIAgent"
+                            title: "选择React作为前端框架"
+                            importance: "high"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/visualization/decisions:
+    get:
+      tags:
+        - Decisions
+      summary: 获取决策记录列表
+      description: |
+        获取用户的决策记录列表，支持按重要性、Agent类型、时间范围过滤。
+        可以跨会话查询所有决策或查询特定会话的决策。
+      operationId: listDecisions
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: importance
+          in: query
+          description: 按重要性过滤
+          schema:
+            type: string
+            enum: [high, medium, low]
+        - name: agentType
+          in: query
+          description: 按Agent类型过滤
+          schema:
+            type: string
+            enum: [UIAgent, BackendAgent, DatabaseAgent, IntegrationAgent, DeploymentAgent]
+        - name: sessionId
+          in: query
+          description: 按会话ID过滤
+          schema:
+            type: string
+            format: uuid
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: 成功返回决策列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      decisions:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/DecisionRecord'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+              examples:
+                decisionsList:
+                  summary: 决策列表示例
+                  value:
+                    success: true
+                    data:
+                      decisions:
+                        - decisionId: "decision_001"
+                          sessionId: "550e8400-e29b-41d4-a716-446655440000"
+                          agentId: "agent_ui_001"
+                          agentType: "UIAgent"
+                          title: "选择React作为前端框架"
+                          importance: "high"
+                          reasoning: "React拥有丰富的生态系统和组件库，团队熟悉度高，适合构建复杂的单页应用"
+                          alternatives:
+                            - name: "Vue.js"
+                              pros: ["学习曲线平缓", "模板语法简洁"]
+                              cons: ["生态系统相对较小", "企业级支持不如React"]
+                            - name: "Angular"
+                              pros: ["完整的框架解决方案", "TypeScript原生支持"]
+                              cons: ["学习曲线陡峭", "包体积较大"]
+                          selectedReason: "综合考虑团队技能栈和项目复杂度，React是最优选择"
+                          impacts:
+                            - area: "开发效率"
+                              description: "丰富的组件库可加速开发"
+                              severity: "positive"
+                            - area: "维护成本"
+                              description: "良好的社区支持降低维护成本"
+                              severity: "positive"
+                          timestamp: "2025-10-27T10:32:15Z"
+                          hasPreview: true
+                          previewType: "image"
+                          metadata:
+                            tags: ["frontend", "framework", "architecture"]
+                      pagination:
+                        currentPage: 1
+                        totalPages: 3
+                        totalItems: 48
+                        itemsPerPage: 20
+                        hasNext: true
+                        hasPrevious: false
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/visualization/agents/personas:
+    get:
+      tags:
+        - Agents
+      summary: 获取Agent拟人化配置
+      description: |
+        获取所有Agent类型的拟人化属性配置，包括名称、头像、性格设定、状态消息模板。
+        前端使用这些配置渲染Agent卡片的视觉和文本内容。
+      operationId: getAgentPersonas
+      responses:
+        '200':
+          description: 成功返回Agent拟人化配置
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      personas:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/AgentPersona'
+              examples:
+                personas:
+                  summary: Agent拟人化配置示例
+                  value:
+                    success: true
+                    data:
+                      personas:
+                        - agentType: "UIAgent"
+                          displayName: "UI设计师 Alex"
+                          avatarUrl: "/assets/avatars/ui-agent.svg"
+                          color: "#3B82F6"
+                          personality: "professional_friendly"
+                          statusTemplates:
+                            idle: "准备就绪，等待任务..."
+                            starting: "正在启动UI设计流程..."
+                            analyzing: "正在分析用户需求和界面布局..."
+                            designing: "正在为您设计{componentName}组件..."
+                            selecting: "正在选择最佳UI组件库..."
+                            completing: "太棒了！UI组件已就绪 ✓"
+                            error: "遇到问题了，让我重试一下..."
+                          description: "负责用户界面设计、组件选择和布局优化"
+                          capabilities:
+                            - "UI组件选择"
+                            - "布局设计"
+                            - "响应式设计"
+                            - "主题定制"
+                        - agentType: "BackendAgent"
+                          displayName: "后端工程师 Sam"
+                          avatarUrl: "/assets/avatars/backend-agent.svg"
+                          color: "#10B981"
+                          personality: "professional_friendly"
+                          statusTemplates:
+                            idle: "准备就绪，等待任务..."
+                            starting: "正在启动后端开发流程..."
+                            analyzing: "正在分析业务逻辑和数据流..."
+                            creating: "正在创建{apiName} API接口..."
+                            implementing: "正在实现业务逻辑..."
+                            completing: "太棒了！API接口已就绪 ✓"
+                            error: "遇到问题了，让我重试一下..."
+                          description: "负责API接口创建、业务逻辑实现和服务集成"
+                          capabilities:
+                            - "RESTful API设计"
+                            - "业务逻辑实现"
+                            - "数据验证"
+                            - "错误处理"
+                        - agentType: "DatabaseAgent"
+                          displayName: "数据库专家 Morgan"
+                          avatarUrl: "/assets/avatars/database-agent.svg"
+                          color: "#F59E0B"
+                          personality: "professional_friendly"
+                          statusTemplates:
+                            idle: "准备就绪，等待任务..."
+                            starting: "正在启动数据库设计流程..."
+                            analyzing: "正在分析数据模型和关系..."
+                            designing: "正在设计{tableName}表结构..."
+                            optimizing: "正在优化索引和查询性能..."
+                            completing: "太棒了！数据库schema已就绪 ✓"
+                            error: "遇到问题了，让我重试一下..."
+                          description: "负责数据库架构设计、数据模型定义和查询优化"
+                          capabilities:
+                            - "数据库schema设计"
+                            - "关系建模"
+                            - "索引优化"
+                            - "迁移脚本生成"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/visualization/settings/theme:
+    put:
+      tags:
+        - Settings
+      summary: 更新用户主题偏好
+      description: |
+        更新用户的可视化主题偏好设置。
+        支持两种主题：
+        - `warm_friendly`: 温暖友好风（默认）- 明亮色彩、圆角卡片、趣味插画
+        - `tech_futuristic`: 科技未来感 - 深色背景、霓虹色点缀、流畅粒子动画
+      operationId: updateThemeSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - theme
+              properties:
+                theme:
+                  type: string
+                  enum: [warm_friendly, tech_futuristic]
+                  description: 主题标识符
+            examples:
+              switchToTechTheme:
+                summary: 切换到科技未来感主题
+                value:
+                  theme: "tech_futuristic"
+      responses:
+        '200':
+          description: 主题偏好更新成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      theme:
+                        type: string
+                        example: "tech_futuristic"
+                      updatedAt:
+                        type: string
+                        format: date-time
+                        example: "2025-10-27T12:30:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/visualization/settings/privacy:
+    put:
+      tags:
+        - Settings
+      summary: 更新隐私设置
+      description: |
+        更新用户的隐私和数据收集偏好设置。
+        用户可以选择完全退出（opt-out）数据收集。
+      operationId: updatePrivacySettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - dataCollection
+              properties:
+                dataCollection:
+                  type: object
+                  required:
+                    - enabled
+                  properties:
+                    enabled:
+                      type: boolean
+                      description: 是否允许数据收集
+                    anonymousOnly:
+                      type: boolean
+                      description: 仅允许匿名化数据收集（默认true）
+                      default: true
+            examples:
+              optOut:
+                summary: 退出数据收集
+                value:
+                  dataCollection:
+                    enabled: false
+              optInAnonymous:
+                summary: 仅允许匿名数据收集
+                value:
+                  dataCollection:
+                    enabled: true
+                    anonymousOnly: true
+      responses:
+        '200':
+          description: 隐私设置更新成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      dataCollection:
+                        type: object
+                        properties:
+                          enabled:
+                            type: boolean
+                          anonymousOnly:
+                            type: boolean
+                      updatedAt:
+                        type: string
+                        format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/visualization/metrics:
+    post:
+      tags:
+        - Metrics
+      summary: 提交匿名化用户交互指标
+      description: |
+        提交匿名化的用户交互指标用于产品分析。
+        所有数据在客户端发送前已匿名化，不包含任何PII信息。
+
+        **收集的指标类型**:
+        - 决策卡片交互（点击率、展开详情率）
+        - Agent卡片交互率
+        - 回放功能使用率
+        - 主题切换率
+        - 专注模式使用率
+        - 构建中途放弃率
+        - 错误恢复操作选择分布
+      operationId: submitMetrics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - eventType
+                - timestamp
+              properties:
+                eventType:
+                  type: string
+                  enum:
+                    - decision_card_clicked
+                    - decision_detail_expanded
+                    - agent_card_interacted
+                    - replay_started
+                    - theme_switched
+                    - focus_mode_toggled
+                    - build_abandoned
+                    - error_recovery_action
+                  description: 事件类型
+                timestamp:
+                  type: string
+                  format: date-time
+                  description: 事件发生时间
+                sessionId:
+                  type: string
+                  format: uuid
+                  description: 构建会话ID（匿名化）
+                metadata:
+                  type: object
+                  description: 事件相关的额外元数据
+                  additionalProperties: true
+            examples:
+              decisionClicked:
+                summary: 决策卡片点击事件
+                value:
+                  eventType: "decision_card_clicked"
+                  timestamp: "2025-10-27T10:32:30Z"
+                  sessionId: "550e8400-e29b-41d4-a716-446655440000"
+                  metadata:
+                    decisionImportance: "high"
+                    agentType: "UIAgent"
+              errorRecovery:
+                summary: 错误恢复操作事件
+                value:
+                  eventType: "error_recovery_action"
+                  timestamp: "2025-10-27T10:35:15Z"
+                  sessionId: "550e8400-e29b-41d4-a716-446655440000"
+                  metadata:
+                    errorType: "api_timeout"
+                    action: "retry"
+                    attemptNumber: 2
+      responses:
+        '202':
+          description: 指标已接受处理（异步）
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "指标已提交，感谢您的参与"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        使用JWT Bearer Token认证。
+        在请求头中添加: `Authorization: Bearer <token>`
+
+        Token获取方式: 通过 `/api/auth/login` 端点登录获取
+
+  schemas:
+    BuildSessionSummary:
+      type: object
+      description: 构建会话摘要信息
+      required:
+        - sessionId
+        - projectId
+        - userId
+        - status
+        - startTime
+        - isArchived
+        - dataSource
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+          description: 会话唯一标识符
+        projectId:
+          type: string
+          format: uuid
+          description: 项目ID
+        projectName:
+          type: string
+          description: 项目名称
+        userId:
+          type: string
+          description: 用户ID
+        status:
+          type: string
+          enum: [pending, in_progress, completed, failed, cancelled]
+          description: 会话状态
+        startTime:
+          type: string
+          format: date-time
+          description: 开始时间
+        endTime:
+          type: string
+          format: date-time
+          description: 结束时间（如已完成）
+        duration:
+          type: integer
+          description: 持续时长（秒）
+        agentsCount:
+          type: integer
+          description: 参与的Agent数量
+        decisionsCount:
+          type: integer
+          description: 产生的决策数量
+        errorSummary:
+          type: string
+          description: 错误摘要（如失败）
+        isArchived:
+          type: boolean
+          description: 是否已归档到冷存储
+        dataSource:
+          type: string
+          enum: [database, archive]
+          description: 数据来源
+
+    BuildSessionDetail:
+      type: object
+      description: 构建会话完整详情
+      allOf:
+        - $ref: '#/components/schemas/BuildSessionSummary'
+        - type: object
+          properties:
+            agents:
+              type: array
+              description: Agent工作状态列表
+              items:
+                $ref: '#/components/schemas/AgentWorkStatus'
+            decisions:
+              type: array
+              description: 决策记录列表
+              items:
+                $ref: '#/components/schemas/DecisionRecord'
+            collaborations:
+              type: array
+              description: 协作事件列表
+              items:
+                $ref: '#/components/schemas/CollaborationEvent'
+            errors:
+              type: array
+              description: 错误记录列表
+              items:
+                $ref: '#/components/schemas/AgentErrorRecord'
+            overallProgress:
+              type: number
+              minimum: 0
+              maximum: 100
+              description: 总体完成进度百分比
+
+    AgentWorkStatus:
+      type: object
+      description: Agent工作状态
+      required:
+        - agentId
+        - agentType
+        - status
+        - progress
+      properties:
+        agentId:
+          type: string
+          description: Agent实例ID
+        agentType:
+          type: string
+          enum: [UIAgent, BackendAgent, DatabaseAgent, IntegrationAgent, DeploymentAgent]
+          description: Agent类型
+        status:
+          type: string
+          enum: [pending, in_progress, completed, failed, skipped]
+          description: 当前状态
+        currentTask:
+          type: string
+          description: 当前任务描述
+        progress:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: 完成进度百分比
+        startTime:
+          type: string
+          format: date-time
+          description: 开始时间
+        endTime:
+          type: string
+          format: date-time
+          description: 结束时间（如已完成）
+        duration:
+          type: integer
+          description: 持续时长（秒）
+        retryCount:
+          type: integer
+          description: 重试次数
+
+    DecisionRecord:
+      type: object
+      description: Agent决策记录
+      required:
+        - decisionId
+        - sessionId
+        - agentId
+        - agentType
+        - title
+        - importance
+        - timestamp
+      properties:
+        decisionId:
+          type: string
+          description: 决策唯一标识符
+        sessionId:
+          type: string
+          format: uuid
+          description: 所属会话ID
+        agentId:
+          type: string
+          description: 决策Agent的ID
+        agentType:
+          type: string
+          enum: [UIAgent, BackendAgent, DatabaseAgent, IntegrationAgent, DeploymentAgent]
+          description: Agent类型
+        title:
+          type: string
+          description: 决策标题
+        importance:
+          type: string
+          enum: [high, medium, low]
+          description: 决策重要性
+        reasoning:
+          type: string
+          description: 决策理由
+        alternatives:
+          type: array
+          description: 备选方案列表
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              pros:
+                type: array
+                items:
+                  type: string
+              cons:
+                type: array
+                items:
+                  type: string
+        selectedReason:
+          type: string
+          description: 选择该方案的原因
+        impacts:
+          type: array
+          description: 决策影响列表
+          items:
+            type: object
+            properties:
+              area:
+                type: string
+                description: 影响领域
+              description:
+                type: string
+                description: 影响描述
+              severity:
+                type: string
+                enum: [positive, neutral, negative]
+                description: 影响性质
+        timestamp:
+          type: string
+          format: date-time
+          description: 决策时间
+        hasPreview:
+          type: boolean
+          description: 是否有预览数据
+        previewType:
+          type: string
+          enum: [image, html, json]
+          description: 预览类型
+        metadata:
+          type: object
+          description: 额外元数据
+          additionalProperties: true
+
+    CollaborationEvent:
+      type: object
+      description: Agent协作事件
+      required:
+        - eventId
+        - sessionId
+        - sourceAgentId
+        - targetAgentId
+        - dataType
+        - timestamp
+      properties:
+        eventId:
+          type: string
+          description: 事件唯一标识符
+        sessionId:
+          type: string
+          format: uuid
+          description: 所属会话ID
+        sourceAgentId:
+          type: string
+          description: 源Agent ID
+        sourceAgentType:
+          type: string
+          enum: [UIAgent, BackendAgent, DatabaseAgent, IntegrationAgent, DeploymentAgent]
+          description: 源Agent类型
+        targetAgentId:
+          type: string
+          description: 目标Agent ID
+        targetAgentType:
+          type: string
+          enum: [UIAgent, BackendAgent, DatabaseAgent, IntegrationAgent, DeploymentAgent]
+          description: 目标Agent类型
+        dataType:
+          type: string
+          description: 传递的数据类型
+        dataSummary:
+          type: string
+          description: 数据内容摘要
+        timestamp:
+          type: string
+          format: date-time
+          description: 协作时间
+
+    AgentErrorRecord:
+      type: object
+      description: Agent错误记录
+      required:
+        - errorId
+        - sessionId
+        - agentId
+        - errorType
+        - errorMessage
+        - timestamp
+      properties:
+        errorId:
+          type: string
+          description: 错误唯一标识符
+        sessionId:
+          type: string
+          format: uuid
+          description: 所属会话ID
+        agentId:
+          type: string
+          description: 发生错误的Agent ID
+        agentType:
+          type: string
+          enum: [UIAgent, BackendAgent, DatabaseAgent, IntegrationAgent, DeploymentAgent]
+          description: Agent类型
+        errorType:
+          type: string
+          enum: [network_timeout, api_rate_limit, service_unavailable, decision_generation_failed, dependency_missing, data_validation_error, unknown]
+          description: 错误类型
+        errorMessage:
+          type: string
+          description: 错误消息
+        stackTrace:
+          type: string
+          description: 堆栈跟踪（技术细节）
+        retryCount:
+          type: integer
+          description: 已重试次数
+        userAction:
+          type: string
+          enum: [retry, skip, terminate, pending]
+          description: 用户选择的操作
+        timestamp:
+          type: string
+          format: date-time
+          description: 错误发生时间
+
+    AgentPersona:
+      type: object
+      description: Agent拟人化配置
+      required:
+        - agentType
+        - displayName
+        - color
+        - personality
+        - statusTemplates
+      properties:
+        agentType:
+          type: string
+          enum: [UIAgent, BackendAgent, DatabaseAgent, IntegrationAgent, DeploymentAgent]
+          description: Agent类型
+        displayName:
+          type: string
+          description: 显示名称（拟人化）
+        avatarUrl:
+          type: string
+          format: uri
+          description: 头像图片URL
+        color:
+          type: string
+          description: 主题色（HEX格式）
+        personality:
+          type: string
+          enum: [professional_friendly]
+          description: 性格设定
+        statusTemplates:
+          type: object
+          description: 状态消息模板（支持变量替换）
+          additionalProperties:
+            type: string
+        description:
+          type: string
+          description: Agent职责描述
+        capabilities:
+          type: array
+          description: 能力列表
+          items:
+            type: string
+
+    ReplayEvent:
+      type: object
+      description: 回放事件
+      required:
+        - timestamp
+        - offsetMs
+        - eventType
+        - data
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: 事件时间戳
+        offsetMs:
+          type: integer
+          description: 相对会话开始的偏移毫秒数
+        eventType:
+          type: string
+          enum: [session_started, session_completed, agent_status_update, decision_created, collaboration_event, error_occurred]
+          description: 事件类型
+        data:
+          type: object
+          description: 事件数据（根据eventType不同而不同）
+          additionalProperties: true
+
+    Pagination:
+      type: object
+      description: 分页信息
+      required:
+        - currentPage
+        - totalPages
+        - totalItems
+        - itemsPerPage
+      properties:
+        currentPage:
+          type: integer
+          minimum: 1
+          description: 当前页码
+        totalPages:
+          type: integer
+          minimum: 0
+          description: 总页数
+        totalItems:
+          type: integer
+          minimum: 0
+          description: 总记录数
+        itemsPerPage:
+          type: integer
+          minimum: 1
+          description: 每页记录数
+        hasNext:
+          type: boolean
+          description: 是否有下一页
+        hasPrevious:
+          type: boolean
+          description: 是否有上一页
+
+    ErrorResponse:
+      type: object
+      description: 统一错误响应格式
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: 错误代码
+            message:
+              type: string
+              description: 错误消息
+            details:
+              type: object
+              description: 错误详情
+              additionalProperties: true
+            timestamp:
+              type: string
+              format: date-time
+              description: 错误发生时间
+
+  responses:
+    BadRequest:
+      description: 请求参数错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "INVALID_REQUEST"
+              message: "请求参数验证失败"
+              details:
+                field: "importance"
+                reason: "必须是以下值之一: high, medium, low"
+              timestamp: "2025-10-27T10:30:00Z"
+
+    Unauthorized:
+      description: 未授权（缺少或无效的JWT token）
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "UNAUTHORIZED"
+              message: "无效的认证凭证"
+              details:
+                reason: "JWT token已过期"
+              timestamp: "2025-10-27T10:30:00Z"
+
+    NotFound:
+      description: 资源未找到
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "NOT_FOUND"
+              message: "请求的资源不存在"
+              details:
+                resource: "BuildSession"
+                sessionId: "550e8400-e29b-41d4-a716-446655440000"
+              timestamp: "2025-10-27T10:30:00Z"
+
+    RateLimitExceeded:
+      description: 速率限制超出
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "RATE_LIMIT_EXCEEDED"
+              message: "请求速率超出限制"
+              details:
+                limit: 100
+                window: "1分钟"
+                retryAfter: 30
+              timestamp: "2025-10-27T10:30:00Z"
+
+    InternalServerError:
+      description: 服务器内部错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "INTERNAL_ERROR"
+              message: "服务器内部错误，请稍后重试"
+              details:
+                requestId: "req_abc123"
+              timestamp: "2025-10-27T10:30:00Z"
