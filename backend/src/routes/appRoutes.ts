@@ -396,7 +396,7 @@ router.post('/:appId/deploy', asyncHandler(async (req, res) => {
   } = req.body;
 
   const deploymentId = uuidv4();
-  const deployment = {
+  const deployment: any = {
     id: deploymentId,
     environment,
     platform,

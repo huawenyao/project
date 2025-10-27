@@ -1,3 +1,5 @@
+/// <reference path="../types/express.d.ts" />
+
 import { Request, Response, NextFunction } from 'express';
 import { RateLimiterRedis, RateLimiterMemory } from 'rate-limiter-flexible';
 import { DatabaseService } from '../services/DatabaseService';

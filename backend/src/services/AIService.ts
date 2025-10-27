@@ -137,18 +137,26 @@ export class AIService {
       throw new Error('Anthropic client not initialized');
     }
 
-    const response = await this.anthropic.completions.create({
+    const requestParams: any = {
       model: options.model || 'claude-3-sonnet-20240229',
       max_tokens: options.maxTokens || 1500,
-      temperature: options.temperature,
-      system: options.systemPrompt,
       messages: [
         {
           role: 'user',
           content: prompt
         }
       ]
-    });
+    };
+
+    if (options.systemPrompt) {
+      requestParams.system = options.systemPrompt;
+    }
+
+    if (options.temperature !== undefined) {
+      requestParams.temperature = options.temperature;
+    }
+
+    const response = await this.anthropic.messages.create(requestParams);
 
     const content = response.content[0];
     if (content.type !== 'text') {

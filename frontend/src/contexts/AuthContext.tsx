@@ -28,6 +28,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const initializeAuth = async () => {
     try {
+      // Skip authentication if VITE_SKIP_AUTH is true
+      if (import.meta.env.VITE_SKIP_AUTH === 'true') {
+        const demoUser: User = {
+          id: 'demo-user-001',
+          email: 'demo@aibuilder.studio',
+          name: 'Demo User',
+          role: 'admin',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+        setUser(demoUser)
+        setLoading(false)
+        return
+      }
+
       const token = localStorage.getItem('auth_token')
       if (token) {
         const userData = await authService.getCurrentUser()
