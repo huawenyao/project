@@ -3,9 +3,11 @@
  *
  * 单个 Agent 的状态卡片组件
  * 显示进度条、当前操作、状态等信息
+ * T098: Enhanced with avatar, display name, and color theme from persona
+ * T102-T103: Professional-friendly status messages
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { AgentWorkStatus, AgentPersona } from '../../types/visualization.types';
 import ProgressBar from '../UI/ProgressBar';
 import StatusBadge from '../UI/StatusBadge';
@@ -23,23 +25,86 @@ export const AgentStatusCard: React.FC<AgentStatusCardProps> = ({
   className = '',
   showDetails = false,
 }) => {
-  // 获取状态对应的样式
+  const [animationClass, setAnimationClass] = useState('');
+
+  // T098: 状态变化时触发动画
+  useEffect(() => {
+    if (status.status === 'completed') {
+      setAnimationClass('agent-completed success-flash');
+      setTimeout(() => setAnimationClass(''), 1000);
+    }
+  }, [status.status]);
+
+  // T102: 生成友好的状态消息
+  const getFriendlyStatusMessage = (): string => {
+    const progress = status.progressPercentage;
+    const tone = persona?.personalityTone || 'professional';
+
+    // 如果有当前操作，添加进度描述
+    if (status.currentOperation && status.status === 'in_progress') {
+      if (progress < 25) {
+        return tone === 'friendly'
+          ? `🌱 开始啦！${status.currentOperation}`
+          : status.currentOperation;
+      } else if (progress < 50) {
+        return tone === 'friendly'
+          ? `🔨 进展顺利：${status.currentOperation}`
+          : status.currentOperation;
+      } else if (progress < 75) {
+        return tone === 'friendly'
+          ? `✨ 过半了！${status.currentOperation}`
+          : status.currentOperation;
+      } else {
+        return tone === 'friendly'
+          ? `🎯 快完成了：${status.currentOperation}`
+          : status.currentOperation;
+      }
+    }
+
+    return status.currentOperation || status.taskDescription;
+  };
+
+  // T103: 获取状态对应的鼓励性消息
+  const getEncouragingMessage = (): string | null => {
+    const tone = persona?.personalityTone || 'professional';
+
+    if (status.status === 'completed') {
+      return tone === 'friendly' ? '🎉 太棒了！任务完成' : '✓ 任务已完成';
+    } else if (status.status === 'retrying' && tone === 'friendly') {
+      return '💪 不放弃！正在重试';
+    } else if (status.status === 'in_progress' && status.progressPercentage >= 90 && tone === 'friendly') {
+      return '🌟 冲刺阶段！';
+    }
+
+    return null;
+  };
+
+  // 获取状态对应的样式（包含动画类）
   const getStatusClass = () => {
+    let baseClass = '';
+
     switch (status.status) {
       case 'in_progress':
       case 'retrying':
-        return 'border-agent-in-progress bg-primary-50';
+        baseClass = 'border-agent-in-progress bg-primary-50 agent-working';
+        break;
       case 'completed':
-        return 'border-agent-completed bg-success-bg';
+        baseClass = 'border-agent-completed bg-success-bg';
+        break;
       case 'failed':
-        return 'border-agent-failed bg-error-bg';
+        baseClass = 'border-agent-failed bg-error-bg';
+        break;
       case 'pending':
-        return 'border-agent-pending bg-surface';
+        baseClass = 'border-agent-pending bg-surface agent-waiting';
+        break;
       case 'skipped':
-        return 'border-agent-skipped bg-surface-hover';
+        baseClass = 'border-agent-skipped bg-surface-hover';
+        break;
       default:
-        return 'border-border bg-surface';
+        baseClass = 'border-border bg-surface';
     }
+
+    return `${baseClass} ${animationClass}`;
   };
 
   // 获取状态对应的图标
@@ -114,15 +179,29 @@ export const AgentStatusCard: React.FC<AgentStatusCardProps> = ({
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center space-x-3">
-          {/* Agent Icon/Avatar */}
+          {/* Agent Icon/Avatar - T098: 添加动画效果 */}
           {persona?.avatarUrl ? (
             <img
               src={persona.avatarUrl}
               alt={persona.displayName}
-              className="w-10 h-10 rounded-full"
+              className={`w-12 h-12 rounded-full border-2 ${
+                status.status === 'in_progress'
+                  ? 'border-primary avatar-active'
+                  : status.status === 'completed'
+                  ? 'border-success'
+                  : 'border-border'
+              }`}
             />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-primary text-text-on-primary flex items-center justify-center font-semibold">
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center font-semibold text-white ${
+              status.status === 'in_progress'
+                ? 'bg-primary avatar-active'
+                : status.status === 'completed'
+                ? 'bg-success'
+                : status.status === 'failed'
+                ? 'bg-error'
+                : 'bg-agent-pending'
+            }`}>
               {status.agentType.substring(0, 2).toUpperCase()}
             </div>
           )}
@@ -132,8 +211,8 @@ export const AgentStatusCard: React.FC<AgentStatusCardProps> = ({
             <h3 className="text-lg font-semibold text-text-primary">
               {persona?.displayName || status.agentType}
             </h3>
-            {persona?.role && (
-              <p className="text-sm text-text-tertiary">{persona.role}</p>
+            {persona?.description && (
+              <p className="text-sm text-text-tertiary line-clamp-1">{persona.description}</p>
             )}
           </div>
         </div>
@@ -150,13 +229,20 @@ export const AgentStatusCard: React.FC<AgentStatusCardProps> = ({
         {status.taskDescription}
       </p>
 
-      {/* Current Operation */}
+      {/* Encouraging Message - T103 */}
+      {getEncouragingMessage() && (
+        <div className="mb-2 px-3 py-2 bg-gradient-to-r from-primary-light/20 to-transparent rounded-lg">
+          <p className="text-sm font-medium text-primary">{getEncouragingMessage()}</p>
+        </div>
+      )}
+
+      {/* Current Operation - T102: 使用友好的状态消息 */}
       {status.currentOperation && (
-        <div className="text-sm text-text-tertiary mb-3 flex items-center">
-          <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="text-sm mb-3 flex items-center">
+          <svg className="w-4 h-4 mr-2 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
-          <span className="truncate">{status.currentOperation}</span>
+          <span className="truncate text-text-secondary">{getFriendlyStatusMessage()}</span>
         </div>
       )}
 

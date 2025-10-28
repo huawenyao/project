@@ -532,3 +532,254 @@
 .loading-dots span:nth-child(3) {
   animation-delay: 0.4s;
 }
+
+/* ===== Agent Persona Animations (T099-T101) ===== */
+
+/* T099: 工作中的脉冲动画 - 用于 in_progress 状态的 Agent 卡片 */
+@keyframes agent-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(var(--color-primary-rgb), 0.4);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(var(--color-primary-rgb), 0);
+    transform: scale(1.02);
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.agent-working {
+  animation: agent-pulse 2s ease-in-out infinite;
+}
+
+.agent-glow {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* 进度条动画效果 */
+@keyframes progress-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.progress-active {
+  background: linear-gradient(
+    90deg,
+    var(--color-primary) 0%,
+    var(--color-primary-dark) 50%,
+    var(--color-primary) 100%
+  );
+  background-size: 200% 100%;
+  animation: progress-shimmer 2s linear infinite;
+}
+
+/* T100: 完成时的庆祝动画 */
+@keyframes celebration {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  10% {
+    transform: scale(1.1) rotate(-5deg);
+  }
+  20% {
+    transform: scale(1.1) rotate(5deg);
+  }
+  30% {
+    transform: scale(1.1) rotate(-5deg);
+  }
+  40% {
+    transform: scale(1.1) rotate(5deg);
+  }
+  50% {
+    transform: scale(1) rotate(0deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes confetti {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes checkmark {
+  0% {
+    transform: scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2) rotate(180deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(360deg);
+    opacity: 1;
+  }
+}
+
+.agent-completed {
+  animation: celebration 0.6s ease-out;
+}
+
+.checkmark-icon {
+  animation: checkmark 0.5s ease-out;
+}
+
+.confetti-particle {
+  animation: confetti 1s ease-out forwards;
+}
+
+/* 成功闪光效果 */
+@keyframes success-flash {
+  0%, 100% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(var(--color-success-rgb), 0.2);
+  }
+}
+
+.success-flash {
+  animation: success-flash 0.8s ease-out;
+}
+
+/* T101: 等待/加载动画 - 用于 pending 状态 */
+@keyframes waiting-pulse {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes waiting-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes waiting-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.agent-waiting {
+  animation: waiting-pulse 2s ease-in-out infinite;
+}
+
+.loading-spinner {
+  animation: waiting-rotate 1s linear infinite;
+}
+
+.waiting-icon {
+  animation: waiting-bounce 1.5s ease-in-out infinite;
+}
+
+/* 点状等待指示器 */
+@keyframes dot-pulse {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.waiting-dots span {
+  animation: dot-pulse 1.4s infinite;
+}
+
+.waiting-dots span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.waiting-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.waiting-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* 头像脉冲效果 */
+@keyframes avatar-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(var(--color-primary-rgb), 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(var(--color-primary-rgb), 0);
+  }
+}
+
+.avatar-active {
+  animation: avatar-pulse 2s ease-out infinite;
+}
+
+/* 状态转换动画 */
+@keyframes status-change {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.status-transition {
+  animation: status-change 0.3s ease-out;
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .agent-working,
+  .agent-glow,
+  .progress-active,
+  .agent-completed,
+  .agent-waiting,
+  .loading-spinner,
+  .waiting-icon,
+  .avatar-active,
+  .checkmark-icon,
+  .confetti-particle {
+    animation: none !important;
+  }
+
+  .agent-working {
+    box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.4);
+  }
+}
