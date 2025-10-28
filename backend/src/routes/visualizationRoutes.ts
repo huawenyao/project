@@ -242,15 +242,16 @@ router.post('/decisions-with-preview', async (req: Request, res: Response) => {
 
 /**
  * GET /api/visualization/sessions/:sessionId/decisions
- * 获取会话的决策记录
+ * 获取会话的决策记录（支持重要性过滤）
  */
 router.get('/sessions/:sessionId/decisions', async (req: Request, res: Response) => {
   try {
     const { sessionId } = req.params;
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 50;
+    const importance = req.query.importance as string; // critical/high/medium/low/all
 
-    const result = await decisionService.getSessionDecisions(sessionId, page, pageSize);
+    const result = await decisionService.getSessionDecisions(sessionId, page, pageSize, importance);
     res.status(result.success ? 200 : 400).json(result);
   } catch (error: any) {
     logger.error('Error getting session decisions:', error);
@@ -305,6 +306,51 @@ router.get('/sessions/:sessionId/decisions/search', async (req: Request, res: Re
     res.status(result.success ? 200 : 400).json(result);
   } catch (error: any) {
     logger.error('Error searching decisions:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/visualization/decisions/:decisionId/mark-read
+ * 标记决策为已读
+ */
+router.post('/decisions/:decisionId/mark-read', async (req: Request, res: Response) => {
+  try {
+    const { decisionId } = req.params;
+    const result = await decisionService.markAsRead(decisionId);
+    res.status(result.success ? 200 : 404).json(result);
+  } catch (error: any) {
+    logger.error('Error marking decision as read:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/visualization/sessions/:sessionId/decisions/mark-all-read
+ * 标记会话所有决策为已读
+ */
+router.post('/sessions/:sessionId/decisions/mark-all-read', async (req: Request, res: Response) => {
+  try {
+    const { sessionId } = req.params;
+    const result = await decisionService.markAllAsRead(sessionId);
+    res.status(result.success ? 200 : 400).json(result);
+  } catch (error: any) {
+    logger.error('Error marking all decisions as read:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/visualization/sessions/:sessionId/decisions/unread-count
+ * 获取未读决策数量
+ */
+router.get('/sessions/:sessionId/decisions/unread-count', async (req: Request, res: Response) => {
+  try {
+    const { sessionId } = req.params;
+    const result = await decisionService.getUnreadCount(sessionId);
+    res.status(result.success ? 200 : 400).json(result);
+  } catch (error: any) {
+    logger.error('Error getting unread count:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

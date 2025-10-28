@@ -99,18 +99,25 @@ export class DecisionService {
   }
 
   /**
-   * 获取会话的所有决策记录
+   * 获取会话的所有决策记录（支持重要性过滤）
    */
   async getSessionDecisions(
     sessionId: string,
     page: number = 1,
-    pageSize: number = 50
+    pageSize: number = 50,
+    importance?: string
   ): Promise<ServiceResponse<PaginatedResponse<DecisionRecord>>> {
     try {
       const offset = (page - 1) * pageSize;
+      const where: any = { sessionId };
+
+      // 添加重要性过滤
+      if (importance && importance !== 'all') {
+        where.importance = importance;
+      }
 
       const { count, rows } = await DecisionRecord.findAndCountAll({
-        where: { sessionId },
+        where,
         limit: pageSize,
         offset,
         order: [['timestamp', 'DESC']],
@@ -372,6 +379,99 @@ export class DecisionService {
       };
     } catch (error: any) {
       logger.error(`Failed to search decisions for session ${sessionId}:`, error);
+      return {
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
+
+  /**
+   * 标记决策为已读
+   */
+  async markAsRead(decisionId: string): Promise<ServiceResponse<DecisionRecord>> {
+    try {
+      const decision = await DecisionRecord.findByPk(decisionId);
+      if (!decision) {
+        return {
+          success: false,
+          error: 'Decision not found',
+          timestamp: new Date().toISOString(),
+        };
+      }
+
+      decision.isRead = true;
+      await decision.save();
+
+      logger.debug(`Marked decision ${decisionId} as read`);
+
+      return {
+        success: true,
+        data: decision,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error: any) {
+      logger.error(`Failed to mark decision ${decisionId} as read:`, error);
+      return {
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
+
+  /**
+   * 标记会话所有决策为已读
+   */
+  async markAllAsRead(sessionId: string): Promise<ServiceResponse<number>> {
+    try {
+      const [count] = await DecisionRecord.update(
+        { isRead: true },
+        {
+          where: {
+            sessionId,
+            isRead: false,
+          },
+        }
+      );
+
+      logger.info(`Marked ${count} decisions as read for session ${sessionId}`);
+
+      return {
+        success: true,
+        data: count,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error: any) {
+      logger.error(`Failed to mark all decisions as read for session ${sessionId}:`, error);
+      return {
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
+
+  /**
+   * 获取未读决策数量
+   */
+  async getUnreadCount(sessionId: string): Promise<ServiceResponse<number>> {
+    try {
+      const count = await DecisionRecord.count({
+        where: {
+          sessionId,
+          isRead: false,
+        },
+      });
+
+      return {
+        success: true,
+        data: count,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error: any) {
+      logger.error(`Failed to get unread count for session ${sessionId}:`, error);
       return {
         success: false,
         error: error.message,
