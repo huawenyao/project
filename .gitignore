@@ -122,3 +122,84 @@ auto-generated/
 # Backup files
 *.backup
 *.bak
+
+# TypeScript
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Vite
+.vite/
+vite.config.*.timestamp-*
+
+# PostgreSQL local data
+/postgres-data/
+/pgdata/
+*.sql.backup
+
+# Redis local data
+/redis-data/
+dump.rdb
+appendonly.aof
+
+# Object storage local cache (S3 mock, etc.)
+.s3-local/
+s3-data/
+object-storage/
+
+# Spec-kit
+.specify/memory/*.tmp
+.specify/.cache/
+
+# Socket.IO
+socket-io-adapter/
+
+# Test artifacts
+test-results/
+playwright-report/
+e2e-results/
+
+# Local configuration overrides
+config.local.js
+config.local.json
+*.local.ts
+*.local.tsx
+
+# Documentation build
+docs/.vitepress/dist
+docs/.vitepress/cache
+
+# Package manager lock files (uncomment if needed)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Analysis and profiling
+.webpack-bundle-analyzer/
+bundle-analyzer/
+*.cpuprofile
+*.heapprofile
+*.heapsnapshot
+
+# Monitoring and observability
+.prom-data/
+prometheus-data/
+grafana-data/
+
+# Local secrets and keys
+*.pem
+*.key
+*.cert
+*.crt
+secrets/
+credentials/
+
+# AI/LLM specific
+.anthropic-cache/
+.openai-cache/
+llm-cache/
+model-outputs/
+
+# User data and uploads (if stored locally)
+uploads/
+user-data/
+build-artifacts/

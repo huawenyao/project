@@ -170,7 +170,13 @@ export class DatabaseService {
       throw new Error('Redis not connected');
     }
     if (options) {
-      await this.redisClient.set(key, value, options);
+      if (options.EX) {
+        await this.redisClient.setEx(key, options.EX, value);
+      } else if (options.PX) {
+        await this.redisClient.pSetEx(key, options.PX, value);
+      } else {
+        await this.redisClient.set(key, value);
+      }
     } else {
       await this.redisClient.set(key, value);
     }

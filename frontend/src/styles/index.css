@@ -1,0 +1,273 @@
+/**
+ * Main Styles Entry Point
+ *
+ * 导入所有主题和动画样式
+ */
+
+/* Tailwind Base */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Theme Styles */
+@import './themes/warm-friendly.css';
+@import './themes/tech-futuristic.css';
+
+/* Animation Effects */
+@import './animations.css';
+
+/* Base Reset and Defaults */
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    min-height: 100vh;
+    transition: background-color var(--transition-base), color var(--transition-base);
+  }
+
+  /* Focus visible improvements */
+  :focus-visible {
+    outline: 2px solid var(--color-border-focus);
+    outline-offset: 2px;
+  }
+
+  /* Remove default button styles */
+  button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* Image defaults */
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Link defaults */
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  /* Form element defaults */
+  input,
+  textarea,
+  select {
+    font-family: inherit;
+    font-size: inherit;
+  }
+}
+
+/* Custom Utility Classes */
+@layer utilities {
+  /* Truncate text */
+  .truncate-2-lines {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .truncate-3-lines {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Glass morphism effect */
+  .glass {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: var(--backdrop-blur);
+    -webkit-backdrop-filter: var(--backdrop-blur);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  /* Hide scrollbar */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Custom scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  /* Text shadow utilities */
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .text-shadow-md {
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+  }
+
+  .text-shadow-lg {
+    text-shadow: 0 15px 30px rgba(0, 0, 0, 0.11), 0 5px 15px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Grid utilities */
+  .grid-auto-fit {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+
+  .grid-auto-fill {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+}
+
+/* Component Layer - Reusable component styles */
+@layer components {
+  /* Card styles */
+  .card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
+  }
+
+  .card:hover {
+    box-shadow: var(--shadow-md);
+  }
+
+  .card-elevated {
+    background-color: var(--color-surface-elevated);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Button styles */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    font-weight: var(--font-weight-medium);
+    transition: all var(--transition-fast);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    background-color: var(--color-primary);
+    color: var(--color-text-on-primary);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background-color: var(--color-primary-dark);
+    box-shadow: var(--shadow-md);
+  }
+
+  .btn-secondary {
+    background-color: var(--color-secondary);
+    color: var(--color-text-on-secondary);
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background-color: var(--color-secondary-dark);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Input styles */
+  .input {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+    transition: all var(--transition-fast);
+  }
+
+  .input:focus {
+    outline: none;
+    border-color: var(--color-border-focus);
+    box-shadow: var(--shadow-outline);
+  }
+
+  .input::placeholder {
+    color: var(--color-text-tertiary);
+  }
+
+  /* Badge styles */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .badge-primary {
+    background-color: var(--color-primary-50);
+    color: var(--color-primary);
+  }
+
+  .badge-success {
+    background-color: var(--color-success-bg);
+    color: var(--color-success);
+  }
+
+  .badge-warning {
+    background-color: var(--color-warning-bg);
+    color: var(--color-warning);
+  }
+
+  .badge-error {
+    background-color: var(--color-error-bg);
+    color: var(--color-error);
+  }
+
+  /* Tooltip styles */
+  .tooltip {
+    position: absolute;
+    z-index: var(--z-tooltip);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background-color: var(--color-surface-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    box-shadow: var(--shadow-lg);
+    pointer-events: none;
+  }
+}
