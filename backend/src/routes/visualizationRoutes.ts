@@ -478,4 +478,58 @@ router.get('/sessions/:sessionId/collaborations/stats', async (req: Request, res
   }
 });
 
+// ==================== Agent Persona Routes (T095) ====================
+
+/**
+ * GET /api/visualization/agents/personas
+ * 获取所有 Agent 拟人化配置
+ * T095: [US3] Implement GET /api/visualization/agents/personas endpoint
+ */
+router.get('/agents/personas', async (req: Request, res: Response) => {
+  try {
+    const { AgentPersona } = await import('../models/AgentPersona.model');
+
+    const personas = await AgentPersona.findAll({
+      order: [['priority', 'ASC'], ['agentType', 'ASC']],
+    });
+
+    res.status(200).json({
+      success: true,
+      data: personas,
+      count: personas.length,
+    });
+  } catch (error: any) {
+    logger.error('Error getting agent personas:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/visualization/agents/personas/:agentType
+ * 获取指定 Agent 的拟人化配置
+ */
+router.get('/agents/personas/:agentType', async (req: Request, res: Response) => {
+  try {
+    const { agentType } = req.params;
+    const { AgentPersona } = await import('../models/AgentPersona.model');
+
+    const persona = await AgentPersona.findByPk(agentType);
+
+    if (!persona) {
+      return res.status(404).json({
+        success: false,
+        error: `Persona for agent type '${agentType}' not found`,
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: persona,
+    });
+  } catch (error: any) {
+    logger.error('Error getting agent persona:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 export default router;

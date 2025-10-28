@@ -3,9 +3,11 @@
  *
  * 追踪和更新 Agent 工作状态，与 AgentOrchestrator 集成
  * 负责状态变更检测和 WebSocket 事件触发
+ * T096: [US3] Add persona data to agent status updates
  */
 
 import AgentWorkStatus from '../models/AgentWorkStatus.model';
+import { AgentPersona } from '../models/AgentPersona.model';
 import { visualizationEmitter } from '../websocket/visualizationEmitter';
 import logger from '../utils/logger';
 
@@ -59,7 +61,10 @@ class AgentStatusTracker {
         startTime: new Date(),
       });
 
-      // 触发 WebSocket 事件
+      // T096: 获取 Agent 的 persona 数据
+      const persona = await AgentPersona.findByPk(agentType);
+
+      // 触发 WebSocket 事件（包含 persona 数据）
       visualizationEmitter.emitAgentStatusUpdate(sessionId, {
         statusId: status.statusId,
         sessionId: status.sessionId,
@@ -73,6 +78,13 @@ class AgentStatusTracker {
         maxRetry: status.maxRetry,
         createdAt: status.createdAt.toISOString(),
         updatedAt: status.updatedAt.toISOString(),
+        // 添加 persona 数据
+        persona: persona ? {
+          displayName: persona.displayName,
+          avatarUrl: persona.avatarUrl,
+          personalityTone: persona.personalityTone,
+          description: persona.description,
+        } : undefined,
       });
 
       return {
