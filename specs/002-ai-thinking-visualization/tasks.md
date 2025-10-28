@@ -117,29 +117,29 @@
 
 ### Backend Implementation for US1
 
-- [ ] T055 [P] [US1] Implement POST /api/visualization/sessions endpoint in backend/src/routes/visualizationRoutes.ts
-- [ ] T056 [P] [US1] Implement GET /api/visualization/sessions endpoint with hot/cold filter in backend/src/routes/visualizationRoutes.ts
-- [ ] T057 [P] [US1] Implement GET /api/visualization/sessions/:id endpoint in backend/src/routes/visualizationRoutes.ts
-- [ ] T058 [US1] Add agent status update logic to AgentStatusTracker service in backend/src/services/AgentStatusTracker.ts
-- [ ] T059 [US1] Implement mixed-frequency WebSocket push in agentStatusEmitter (200-500ms for high-priority, 1-2s for low-priority) in backend/src/websocket/handlers/agentStatusEmitter.ts
-- [ ] T060 [US1] Add session state management to VisualizationService in backend/src/services/VisualizationService.ts
-- [ ] T061 [US1] Integrate WebSocket events with AgentOrchestrator in backend/src/services/AgentOrchestrator.ts
+- [X] T055 [P] [US1] Implement POST /api/visualization/sessions endpoint in backend/src/routes/visualizationRoutes.ts
+- [X] T056 [P] [US1] Implement GET /api/visualization/sessions endpoint with hot/cold filter in backend/src/routes/visualizationRoutes.ts
+- [X] T057 [P] [US1] Implement GET /api/visualization/sessions/:id endpoint in backend/src/routes/visualizationRoutes.ts
+- [X] T058 [US1] Add agent status update logic to AgentStatusTracker service in backend/src/services/AgentStatusTracker.ts
+- [X] T059 [US1] Implement mixed-frequency WebSocket push in agentStatusEmitter (200-500ms for high-priority, 1-2s for low-priority) in backend/src/websocket/handlers/agentStatusEmitter.ts
+- [X] T060 [US1] Add session state management to VisualizationService in backend/src/services/VisualizationService.ts
+- [X] T061 [US1] Integrate WebSocket events with AgentOrchestrator in backend/src/services/AgentOrchestrator.ts
 
 ### Frontend Implementation for US1
 
-- [ ] T062 [P] [US1] Create VisualizationPanel container component in frontend/src/components/Visualization/VisualizationPanel.tsx
-- [ ] T063 [P] [US1] Create AgentStatusCard component with progress bar in frontend/src/components/Visualization/AgentStatusCard.tsx
-- [ ] T064 [P] [US1] Create ProgressSummary component for overall progress in frontend/src/components/Visualization/ProgressSummary.tsx
-- [ ] T065 [P] [US1] Create AgentListView component (default view) in frontend/src/components/Visualization/AgentListView.tsx
-- [ ] T066 [US1] Integrate WebSocket real-time updates in VisualizationPanel using useAgentStatus hook
-- [ ] T067 [US1] Add agent status state machine rendering (pending/in_progress/completed/failed/retrying/skipped)
-- [ ] T068 [US1] Implement throttled updates (500ms) to prevent UI stuttering in frontend/src/hooks/useAgentStatus.ts
+- [X] T062 [P] [US1] Create VisualizationPanel container component in frontend/src/components/Visualization/VisualizationPanel.tsx
+- [X] T063 [P] [US1] Create AgentStatusCard component with progress bar in frontend/src/components/Visualization/AgentStatusCard.tsx
+- [X] T064 [P] [US1] Create ProgressSummary component for overall progress in frontend/src/components/Visualization/ProgressSummary.tsx
+- [X] T065 [P] [US1] Create AgentListView component (default view) in frontend/src/components/Visualization/AgentListView.tsx
+- [X] T066 [US1] Integrate WebSocket real-time updates in VisualizationPanel using useAgentStatus hook
+- [X] T067 [US1] Add agent status state machine rendering (pending/in_progress/completed/failed/retrying/skipped)
+- [X] T068 [US1] Implement throttled updates (500ms) to prevent UI stuttering in frontend/src/hooks/useAgentStatus.ts
 
 ### UI Components for US1
 
-- [ ] T069 [P] [US1] Create ProgressBar UI component in frontend/src/components/UI/ProgressBar.tsx
-- [ ] T070 [P] [US1] Create StatusBadge UI component with color-coded states in frontend/src/components/UI/StatusBadge.tsx
-- [ ] T071 [P] [US1] Create LoadingSpinner UI component in frontend/src/components/UI/LoadingSpinner.tsx
+- [X] T069 [P] [US1] Create ProgressBar UI component in frontend/src/components/UI/ProgressBar.tsx
+- [X] T070 [P] [US1] Create StatusBadge UI component with color-coded states in frontend/src/components/UI/StatusBadge.tsx
+- [X] T071 [P] [US1] Create LoadingSpinner UI component in frontend/src/components/UI/LoadingSpinner.tsx
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - users can see real-time agent status and progress updates
 
