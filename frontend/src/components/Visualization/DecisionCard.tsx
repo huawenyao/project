@@ -2,25 +2,26 @@
  * DecisionCard
  *
  * 决策卡片组件 - 显示完整决策详情
+ * T092-T094: Integrated preview display with click-to-expand
  */
 
 import React, { useState } from 'react';
 import type { DecisionRecord } from '../../types/visualization.types';
+import { PreviewModal, PreviewData } from './PreviewModal';
 
 export interface DecisionCardProps {
-  decision: DecisionRecord;
+  decision: DecisionRecord & { preview?: PreviewData };
   onMarkAsRead?: (decisionId: string) => void;
-  onViewPreview?: (decisionId: string) => void;
   className?: string;
 }
 
 export const DecisionCard: React.FC<DecisionCardProps> = ({
   decision,
   onMarkAsRead,
-  onViewPreview,
   className = '',
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const getImportanceBadge = () => {
     const badges = {
@@ -149,18 +150,82 @@ export const DecisionCard: React.FC<DecisionCardProps> = ({
         </div>
       )}
 
+      {/* Preview Section (T092: Integrate preview display) */}
+      {decision.preview && (
+        <div className="mb-3 p-4 bg-gradient-to-r from-primary-light/10 to-primary-light/5 border border-primary-light rounded-lg">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center space-x-2 mb-2">
+                <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <span className="text-sm font-semibold text-primary">预览可用</span>
+                <span className="px-2 py-0.5 text-xs bg-primary text-text-on-primary rounded-full">
+                  {decision.preview.type.toUpperCase()}
+                </span>
+              </div>
+              <p className="text-sm text-text-secondary">
+                {decision.preview.description || '点击查看预览详情'}
+              </p>
+            </div>
+
+            {/* Preview Thumbnail or Icon (T093: Click-to-expand) */}
+            <button
+              onClick={() => setIsPreviewOpen(true)}
+              className="ml-4 group relative"
+            >
+              {decision.preview.type === 'image' ? (
+                <div className="w-24 h-24 rounded overflow-hidden border-2 border-primary group-hover:border-primary-dark transition-colors">
+                  <img
+                    src={decision.preview.content}
+                    alt="Preview"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                  />
+                </div>
+              ) : (
+                <div className="w-24 h-24 rounded bg-primary-light/20 border-2 border-primary group-hover:border-primary-dark flex items-center justify-center transition-colors">
+                  <svg className="w-10 h-10 text-primary group-hover:text-primary-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </div>
+              )}
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-30 rounded transition-all">
+                <span className="text-white opacity-0 group-hover:opacity-100 font-semibold text-sm">
+                  点击查看
+                </span>
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Footer */}
       <div className="flex items-center justify-between text-xs text-text-tertiary pt-3 border-t border-border">
         <span>{new Date(decision.timestamp).toLocaleString('zh-CN')}</span>
-        {onViewPreview && (
+        {decision.preview && (
           <button
-            onClick={() => onViewPreview(decision.decisionId)}
-            className="text-primary hover:text-primary-dark"
+            onClick={() => setIsPreviewOpen(true)}
+            className="flex items-center space-x-1 text-primary hover:text-primary-dark transition-colors"
           >
-            查看预览 →
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            <span>查看预览</span>
           </button>
         )}
       </div>
+
+      {/* Preview Modal (T094: Preview type detection and rendering) */}
+      {decision.preview && (
+        <PreviewModal
+          preview={decision.preview}
+          isOpen={isPreviewOpen}
+          onClose={() => setIsPreviewOpen(false)}
+        />
+      )}
     </div>
   );
 };

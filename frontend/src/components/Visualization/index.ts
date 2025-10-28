@@ -17,6 +17,9 @@ export { DecisionSidebar } from './DecisionSidebar';
 export { DecisionTimeline } from './DecisionTimeline';
 export { DecisionModal } from './DecisionModal';
 
+// Preview Components (Phase 5)
+export { PreviewModal } from './PreviewModal';
+
 // Re-export types
 export type { VisualizationPanelProps } from './VisualizationPanel';
 export type { AgentStatusCardProps } from './AgentStatusCard';
@@ -27,3 +30,4 @@ export type { DecisionCardProps } from './DecisionCard';
 export type { DecisionSidebarProps } from './DecisionSidebar';
 export type { DecisionTimelineProps } from './DecisionTimeline';
 export type { DecisionModalProps } from './DecisionModal';
+export type { PreviewModalProps, PreviewData, PreviewType } from './PreviewModal';
