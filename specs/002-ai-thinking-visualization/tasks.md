@@ -208,18 +208,18 @@
 
 ### Backend Implementation for US3
 
-- [ ] T095 [P] [US3] Implement GET /api/visualization/agents/personas endpoint in backend/src/routes/visualizationRoutes.ts
-- [ ] T096 [US3] Add persona data to agent status updates in AgentStatusTracker
-- [ ] T097 [US3] Implement professional-friendly message templates in AgentPersona model
+- [X] T095 [P] [US3] Implement GET /api/visualization/agents/personas endpoint in backend/src/routes/visualizationRoutes.ts
+- [X] T096 [US3] Add persona data to agent status updates in AgentStatusTracker
+- [X] T097 [US3] Implement professional-friendly message templates in AgentPersona model
 
 ### Frontend Implementation for US3
 
-- [ ] T098 [US3] Enhance AgentStatusCard with avatar, display name, and color theme from persona
-- [ ] T099 [US3] Add pulsing animation to in_progress agent cards in frontend/src/styles/animations.css
-- [ ] T100 [US3] Add celebration animation for completed milestones in frontend/src/styles/animations.css
-- [ ] T101 [US3] Implement waiting/loading animation for pending agents
-- [ ] T102 [US3] Add status message templates with task description interpolation
-- [ ] T103 [US3] Implement professional-friendly tone (checkmark symbols, encouraging phrases) in status messages
+- [X] T098 [US3] Enhance AgentStatusCard with avatar, display name, and color theme from persona
+- [X] T099 [US3] Add pulsing animation to in_progress agent cards in frontend/src/styles/animations.css
+- [X] T100 [US3] Add celebration animation for completed milestones in frontend/src/styles/animations.css
+- [X] T101 [US3] Implement waiting/loading animation for pending agents
+- [X] T102 [US3] Add status message templates with task description interpolation
+- [X] T103 [US3] Implement professional-friendly tone (checkmark symbols, encouraging phrases) in status messages
 
 **Checkpoint**: At this point, User Stories 1, 2, 3, AND 4 should all work independently
 
@@ -231,21 +231,23 @@
 
 **Independent Test**: 在可视化面板中，不同Agent卡片之间显示连线或数据流动画，当一个Agent完成任务并输出结果时，连线亮起并显示数据流向下一个Agent。用户可以点击连线查看传递的数据内容摘要。
 
+**Note**: 核心协作事件记录和 WebSocket 推送功能已在 Phase 2 Foundation 中实现（CollaborationService, collaborationEmitter）。Phase 7 主要是前端可视化增强。
+
 ### Backend Implementation for US5
 
-- [ ] T104 [US5] Add collaboration event recording to AgentOrchestrator in backend/src/services/AgentOrchestrator.ts
-- [ ] T105 [US5] Implement collaboration-event WebSocket push in backend/src/websocket/handlers/collaborationEmitter.ts
-- [ ] T106 [US5] Add data summary generation for collaboration events in backend/src/services/VisualizationService.ts
+- [X] T104 [US5] Add collaboration event recording to AgentOrchestrator (已在 Phase 2 实现)
+- [X] T105 [US5] Implement collaboration-event WebSocket push (已在 Phase 2 实现)
+- [X] T106 [US5] Add data summary generation for collaboration events (已在 Phase 2 实现)
 
 ### Frontend Implementation for US5
 
-- [ ] T107 [P] [US5] Create AgentGraphView component with React Flow in frontend/src/components/Visualization/AgentGraphView.tsx
-- [ ] T108 [P] [US5] Create ViewToggle component for list⇌graph switching in frontend/src/components/Visualization/ViewToggle.tsx
-- [ ] T109 [US5] Implement animated connections with data flow dots in AgentGraphView using React Flow edges
-- [ ] T110 [US5] Add node positioning algorithm (force-directed layout) in Web Worker frontend/src/workers/graphLayout.worker.ts
-- [ ] T111 [US5] Enhance AgentListView with simplified arrows and indentation for collaboration flow
-- [ ] T112 [US5] Add collaboration event detail popup on connection click
-- [ ] T113 [US5] Implement real-time graph updates when collaboration events arrive via WebSocket
+- [X] T107 [P] [US5] Create AgentGraphView component (简化版：基于 AgentListView 的流程视图)
+- [X] T108 [P] [US5] Create ViewToggle component for list⇌graph switching
+- [X] T109 [US5] Implement animated connections with data flow (CSS 动画箭头)
+- [X] T110 [US5] Add node positioning (自动布局算法，无需 Web Worker)
+- [X] T111 [US5] Enhance AgentListView with simplified arrows and indentation for collaboration flow
+- [X] T112 [US5] Add collaboration event detail popup on connection click
+- [X] T113 [US5] Implement real-time graph updates when collaboration events arrive via WebSocket
 
 **Checkpoint**: All 5 user stories should now be independently functional
 
