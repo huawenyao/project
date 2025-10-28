@@ -153,24 +153,24 @@
 
 ### Backend Implementation for US2
 
-- [ ] T072 [P] [US2] Implement GET /api/visualization/decisions endpoint with importance filter in backend/src/routes/visualizationRoutes.ts
-- [ ] T073 [P] [US2] Implement POST /api/visualization/decisions/:id/mark-read endpoint in backend/src/routes/visualizationRoutes.ts
-- [ ] T074 [US2] Add decision recording logic to DecisionManager service in backend/src/services/DecisionManager.ts
-- [ ] T075 [US2] Implement decision importance classification (high/medium/low) in DecisionManager
-- [ ] T076 [US2] Implement decision notification routing in decisionEmitter (toast for high, sidebar for medium/low) in backend/src/websocket/handlers/decisionEmitter.ts
-- [ ] T077 [US2] Add decision-created WebSocket event with <100ms latency for high-importance decisions
+- [X] T072 [P] [US2] Implement GET /api/visualization/decisions endpoint with importance filter in backend/src/routes/visualizationRoutes.ts
+- [X] T073 [P] [US2] Implement POST /api/visualization/decisions/:id/mark-read endpoint in backend/src/routes/visualizationRoutes.ts
+- [X] T074 [US2] Add decision recording logic to DecisionManager service in backend/src/services/DecisionManager.ts
+- [X] T075 [US2] Implement decision importance classification (high/medium/low) in DecisionManager
+- [X] T076 [US2] Implement decision notification routing in decisionEmitter (toast for high, sidebar for medium/low) in backend/src/websocket/handlers/decisionEmitter.ts
+- [X] T077 [US2] Add decision-created WebSocket event with <100ms latency for high-importance decisions
 
 ### Frontend Implementation for US2
 
-- [ ] T078 [P] [US2] Create DecisionToast component with react-hot-toast in frontend/src/components/Visualization/DecisionToast.tsx
-- [ ] T079 [P] [US2] Create DecisionSidebar component with timeline view in frontend/src/components/Visualization/DecisionSidebar.tsx
-- [ ] T080 [P] [US2] Create DecisionCard component with full details in frontend/src/components/Visualization/DecisionCard.tsx
-- [ ] T081 [P] [US2] Create DecisionTimeline component with unread badges in frontend/src/components/Visualization/DecisionTimeline.tsx
-- [ ] T082 [US2] Integrate decision WebSocket events in decisionStore
-- [ ] T083 [US2] Implement toast auto-dismiss after 5 seconds with sidebar persistence
-- [ ] T084 [US2] Add decision detail expansion modal with reasoning/alternatives/tradeoffs
-- [ ] T085 [US2] Implement "mark all as read" functionality in DecisionSidebar
-- [ ] T086 [US2] Add notification badge with unread count in DecisionSidebar
+- [X] T078 [P] [US2] Create DecisionToast component with react-hot-toast in frontend/src/components/Visualization/DecisionToast.tsx
+- [X] T079 [P] [US2] Create DecisionSidebar component with timeline view in frontend/src/components/Visualization/DecisionSidebar.tsx
+- [X] T080 [P] [US2] Create DecisionCard component with full details in frontend/src/components/Visualization/DecisionCard.tsx
+- [X] T081 [P] [US2] Create DecisionTimeline component with unread badges in frontend/src/components/Visualization/DecisionTimeline.tsx
+- [X] T082 [US2] Integrate decision WebSocket events in decisionStore
+- [X] T083 [US2] Implement toast auto-dismiss after 5 seconds with sidebar persistence
+- [X] T084 [US2] Add decision detail expansion modal with reasoning/alternatives/tradeoffs
+- [X] T085 [US2] Implement "mark all as read" functionality in DecisionSidebar
+- [X] T086 [US2] Add notification badge with unread count in DecisionSidebar
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -184,17 +184,17 @@
 
 ### Backend Implementation for US4
 
-- [ ] T087 [P] [US4] Add preview data association to decision records in DecisionManager service
-- [ ] T088 [US4] Implement preview generation for UI decisions (static images) in backend/src/services/DecisionManager.ts
-- [ ] T089 [P] [US4] Implement preview generation for API decisions (JSON examples) in backend/src/services/DecisionManager.ts
-- [ ] T090 [US4] Add preview data to decision-created WebSocket events
+- [X] T087 [P] [US4] Add preview data association to decision records in DecisionManager service
+- [X] T088 [US4] Implement preview generation for UI decisions (static images) in backend/src/services/DecisionManager.ts
+- [X] T089 [P] [US4] Implement preview generation for API decisions (JSON examples) in backend/src/services/DecisionManager.ts
+- [X] T090 [US4] Add preview data to decision-created WebSocket events
 
 ### Frontend Implementation for US4
 
-- [ ] T091 [P] [US4] Create PreviewModal component with image/HTML/JSON rendering in frontend/src/components/Visualization/PreviewModal.tsx
-- [ ] T092 [US4] Integrate preview display in DecisionCard component
-- [ ] T093 [US4] Add preview click-to-expand functionality in DecisionCard
-- [ ] T094 [US4] Implement preview type detection (image/html/json/diagram) and appropriate rendering
+- [X] T091 [P] [US4] Create PreviewModal component with image/HTML/JSON rendering in frontend/src/components/Visualization/PreviewModal.tsx
+- [X] T092 [US4] Integrate preview display in DecisionCard component
+- [X] T093 [US4] Add preview click-to-expand functionality in DecisionCard
+- [X] T094 [US4] Implement preview type detection (image/html/json/diagram) and appropriate rendering
 
 **Checkpoint**: At this point, User Stories 1, 2, AND 4 should all work independently
 
