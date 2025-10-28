@@ -6,6 +6,8 @@ import { BackendAgent } from '../agents/BackendAgent';
 import { DatabaseAgent } from '../agents/DatabaseAgent';
 import { IntegrationAgent } from '../agents/IntegrationAgent';
 import { DeploymentAgent } from '../agents/DeploymentAgent';
+import { agentStatusTracker, AgentType } from './AgentStatusTracker';
+import visualizationService from './VisualizationService';
 
 export interface AgentRequest {
   requestId: string;
@@ -70,17 +72,33 @@ export class AgentOrchestrator extends EventEmitter {
 
   public async processRequest(request: AgentRequest): Promise<AgentResponse> {
     logger.info(`Processing agent request: ${request.requestId}`);
-    
+
     this.activeRequests.set(request.requestId, request);
-    
+
+    // Create visualization session
+    const sessionResult = await visualizationService.createSession({
+      sessionId: request.requestId,
+      userId: request.userId,
+      projectId: request.projectId,
+      startTime: new Date(),
+      status: 'in_progress',
+      agentList: [],
+      archived: false,
+    });
+
+    if (!sessionResult.success) {
+      logger.error('Failed to create visualization session:', sessionResult.error);
+    }
+
     try {
       // Parse the request and determine the execution plan
       const executionPlan = await this.createExecutionPlan(request);
-      
+
       // Execute the plan step by step
       const steps: AgentStep[] = [];
+      const agentStatusIds: Map<string, string> = new Map(); // agentType -> statusId
       let progress = 0;
-      
+
       for (const planStep of executionPlan) {
         const step: AgentStep = {
           agentType: planStep.agentType,
@@ -88,37 +106,69 @@ export class AgentOrchestrator extends EventEmitter {
           status: 'in_progress',
           timestamp: new Date()
         };
-        
+
         steps.push(step);
         this.emit('step_started', { requestId: request.requestId, step });
-        
+
+        // Start agent tracking with WebSocket push
+        const agentType = this.mapAgentTypeToEnum(planStep.agentType);
+        const startResult = await agentStatusTracker.startAgent({
+          sessionId: request.requestId,
+          agentType,
+          taskDescription: planStep.action,
+          estimatedDuration: planStep.estimatedDuration,
+        });
+
+        if (startResult.success && startResult.data) {
+          agentStatusIds.set(planStep.agentType, startResult.data.statusId);
+        }
+
         try {
           const agent = this.agents.get(planStep.agentType);
           if (!agent) {
             throw new Error(`Agent not found: ${planStep.agentType}`);
           }
-          
+
           const result = await agent.execute(planStep.action, planStep.parameters, request.context);
-          
+
           step.status = 'completed';
           step.result = result;
           progress += (100 / executionPlan.length);
-          
+
           this.emit('step_completed', { requestId: request.requestId, step, progress });
-          
+
+          // Complete agent tracking with WebSocket push
+          const statusId = agentStatusIds.get(planStep.agentType);
+          if (statusId) {
+            await agentStatusTracker.completeAgent({
+              statusId,
+              resultSummary: typeof result === 'string' ? result : JSON.stringify(result).substring(0, 200),
+            });
+          }
+
         } catch (error) {
           step.status = 'failed';
           step.error = error instanceof Error ? error.message : 'Unknown error';
-          
+
           this.emit('step_failed', { requestId: request.requestId, step, error });
-          
+
+          // Fail agent tracking with WebSocket push
+          const statusId = agentStatusIds.get(planStep.agentType);
+          if (statusId) {
+            await agentStatusTracker.failAgent({
+              statusId,
+              errorMessage: error instanceof Error ? error.message : 'Unknown error',
+              canRetry: !planStep.critical,
+            });
+          }
+
           // Decide whether to continue or abort based on step criticality
           if (planStep.critical) {
             throw error;
           }
         }
       }
-      
+
       const response: AgentResponse = {
         requestId: request.requestId,
         success: true,
@@ -126,27 +176,47 @@ export class AgentOrchestrator extends EventEmitter {
         progress: 100,
         result: this.consolidateResults(steps)
       };
-      
+
+      // Update session status to success
+      await visualizationService.updateSessionStatus(request.requestId, 'success', new Date());
+
       this.activeRequests.delete(request.requestId);
       this.emit('request_completed', response);
-      
+
       return response;
-      
+
     } catch (error) {
       logger.error(`Agent request failed: ${request.requestId}`, error);
-      
+
+      // Update session status to failed
+      await visualizationService.updateSessionStatus(request.requestId, 'failed', new Date());
+
       const response: AgentResponse = {
         requestId: request.requestId,
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         steps: []
       };
-      
+
       this.activeRequests.delete(request.requestId);
       this.emit('request_failed', response);
-      
+
       return response;
     }
+  }
+
+  /**
+   * Map agent type string to AgentType enum
+   */
+  private mapAgentTypeToEnum(agentType: string): AgentType {
+    const mapping: Record<string, AgentType> = {
+      'ui': 'UIAgent',
+      'backend': 'BackendAgent',
+      'database': 'DatabaseAgent',
+      'integration': 'IntegrationAgent',
+      'deployment': 'DeploymentAgent',
+    };
+    return mapping[agentType] || 'UIAgent';
   }
 
   private async createExecutionPlan(request: AgentRequest): Promise<any[]> {
