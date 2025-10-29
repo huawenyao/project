@@ -26,6 +26,7 @@ export class ProjectModel {
         data: {
           userId: data.userId,
           name: data.name,
+          description: data.name, // 使用name作为默认description
           requirementText: data.requirementText,
           requirementSummary: data.requirementSummary,
           status: data.status || 'draft',
@@ -95,7 +96,7 @@ export class ProjectModel {
             orderBy: { createdAt: 'desc' },
           },
           buildLogs: {
-            orderBy: { createdAt: 'desc' },
+            orderBy: { timestamp: 'desc' },
             take: 10, // 只取最近10条日志
           },
         },

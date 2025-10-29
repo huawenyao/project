@@ -27,17 +27,16 @@ export class TaskModel {
         data: {
           projectId: data.projectId,
           agentId: data.agentId,
-          taskType: data.taskType,
+          type: data.taskType,
           description: data.description,
           input: data.input,
           dependencies: data.dependencies || [],
           priority: data.priority || 5,
-          estimatedDuration: data.estimatedDuration,
           status: 'pending',
         },
       });
 
-      logger.info(`Task created: ${task.id} (type: ${task.taskType}, agent: ${task.agentId})`);
+      logger.info(`Task created: ${task.id} (type: ${task.type}, agent: ${task.agentId})`);
       return task;
     } catch (error: any) {
       logger.error('Failed to create task:', error);
@@ -70,7 +69,7 @@ export class TaskModel {
           agent: {
             select: {
               id: true,
-              agentType: true,
+              type: true,
               name: true,
               status: true,
             },

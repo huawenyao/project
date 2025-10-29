@@ -21,10 +21,13 @@ model User {
   avatarUrl     String?   @db.VarChar(500)
   subscription  String    @default("free") @db.VarChar(20)
   resourceQuota Json?
+  status        String    @default("active") @db.VarChar(20)
+  lastLoginAt   DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   projects      Project[]
 
+  @@index([status])
   @@map("users")
 }
 
@@ -38,6 +41,9 @@ model Project {
   requirementSummary  Json?
   status              String   @default("draft") @db.VarChar(20)
   currentVersion      String?  @db.VarChar(50)
+  estimatedDuration   Int?
+  metadata            Json?
+  progress            Int      @default(0)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -57,16 +63,21 @@ model Project {
 // ===== Agent Model =====
 model Agent {
   id           String   @id @default(uuid())
+  projectId    String?
   type         String   @db.VarChar(50)
   name         String   @db.VarChar(100)
   description  String?  @db.Text
   capabilities Json
   status       String   @default("idle") @db.VarChar(20)
   performance  Json?
+  config       Json?
+  currentTask  String?  @db.VarChar(200)
+  lastActiveAt DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   tasks        Task[]
 
+  @@index([projectId])
   @@index([type])
   @@index([status])
   @@map("agents")
@@ -78,11 +89,13 @@ model Task {
   projectId       String
   agentId         String
   type            String   @db.VarChar(100)
+  description     String?  @db.Text
   input           Json
   output          Json?
   status          String   @default("pending") @db.VarChar(20)
   dependencies    String[]
   priority        Int      @default(0)
+  progress        Int      @default(0)
   executionTimeMs Int?
   errorMessage    String?  @db.Text
   retryCount      Int      @default(0)

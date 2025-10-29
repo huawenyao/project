@@ -5,23 +5,8 @@ import { logger } from '../utils/logger';
 /**
  * 认证中间件
  * 验证JWT token并将用户信息附加到请求对象
- */
-
-// 扩展Express Request类型以包含user属性
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        userId: string;
-        username: string;
-        email: string;
-      };
-    }
-  }
-}
-
-/**
- * 认证中间件 - 验证JWT token
+ *
+ * Note: Request.user类型定义在 src/@types/express.d.ts
  */
 export const authenticate = async (
   req: Request,

@@ -50,7 +50,7 @@ export class BuildLogModel {
       projectId: string;
       level: string;
       message: string;
-      source?: string;
+      source: string;
       metadata?: any;
     }>
   ): Promise<number> {
@@ -96,7 +96,7 @@ export class BuildLogModel {
         skip: options.skip,
         take: options.take,
         where: options.where,
-        orderBy: options.orderBy || { createdAt: 'desc' },
+        orderBy: options.orderBy || { timestamp: 'desc' },
       });
     } catch (error: any) {
       logger.error('Failed to find build logs:', error);
@@ -130,12 +130,12 @@ export class BuildLogModel {
       }
 
       if (options.startDate || options.endDate) {
-        where.createdAt = {};
+        where.timestamp = {};
         if (options.startDate) {
-          where.createdAt.gte = options.startDate;
+          where.timestamp.gte = options.startDate;
         }
         if (options.endDate) {
-          where.createdAt.lte = options.endDate;
+          where.timestamp.lte = options.endDate;
         }
       }
 
@@ -143,7 +143,7 @@ export class BuildLogModel {
         where,
         skip: options.skip,
         take: options.take,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { timestamp: 'desc' },
       });
     } catch (error: any) {
       logger.error(`Failed to find build logs for project ${projectId}:`, error);
@@ -161,7 +161,7 @@ export class BuildLogModel {
     try {
       return await prisma.buildLog.findMany({
         where: { projectId },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { timestamp: 'desc' },
         take: limit,
       });
     } catch (error: any) {
@@ -188,14 +188,14 @@ export class BuildLogModel {
       };
 
       if (options.startDate) {
-        where.createdAt = { gte: options.startDate };
+        where.timestamp = { gte: options.startDate };
       }
 
       return await prisma.buildLog.findMany({
         where,
         skip: options.skip,
         take: options.take,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { timestamp: 'desc' },
       });
     } catch (error: any) {
       logger.error(`Failed to find error logs for project ${projectId}:`, error);
@@ -221,14 +221,14 @@ export class BuildLogModel {
       };
 
       if (options.startDate) {
-        where.createdAt = { gte: options.startDate };
+        where.timestamp = { gte: options.startDate };
       }
 
       return await prisma.buildLog.findMany({
         where,
         skip: options.skip,
         take: options.take,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { timestamp: 'desc' },
       });
     } catch (error: any) {
       logger.error(`Failed to find warning logs for project ${projectId}:`, error);
@@ -262,7 +262,7 @@ export class BuildLogModel {
         where,
         skip: options.skip,
         take: options.take,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { timestamp: 'desc' },
       });
     } catch (error: any) {
       logger.error('Failed to search build logs:', error);
@@ -344,7 +344,7 @@ export class BuildLogModel {
       const result = await prisma.buildLog.deleteMany({
         where: {
           projectId,
-          createdAt: { lt: cutoffDate },
+          timestamp: { lt: cutoffDate },
         },
       });
 
@@ -391,8 +391,8 @@ export class BuildLogModel {
         this.count({ projectId }),
         this.countByLevel(projectId),
         this.countBySource(projectId),
-        this.count({ projectId, level: 'error', createdAt: { gte: oneDayAgo } }),
-        this.count({ projectId, level: 'warning', createdAt: { gte: oneDayAgo } }),
+        this.count({ projectId, level: 'error', timestamp: { gte: oneDayAgo } }),
+        this.count({ projectId, level: 'warning', timestamp: { gte: oneDayAgo } }),
       ]);
 
       return {

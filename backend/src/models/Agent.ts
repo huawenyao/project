@@ -13,7 +13,7 @@ export class AgentModel {
    * 创建新Agent
    */
   static async create(data: {
-    projectId: string;
+    projectId?: string;
     agentType: string;
     name: string;
     description?: string;
@@ -25,7 +25,7 @@ export class AgentModel {
       const agent = await prisma.agent.create({
         data: {
           projectId: data.projectId,
-          agentType: data.agentType,
+          type: data.agentType,
           name: data.name,
           description: data.description,
           capabilities: data.capabilities || [],
@@ -34,7 +34,7 @@ export class AgentModel {
         },
       });
 
-      logger.info(`Agent created: ${agent.id} (${agent.name}, type: ${agent.agentType})`);
+      logger.info(`Agent created: ${agent.id} (${agent.name}, type: ${agent.type})`);
       return agent;
     } catch (error: any) {
       logger.error('Failed to create agent:', error);
@@ -67,13 +67,6 @@ export class AgentModel {
           tasks: {
             orderBy: { createdAt: 'desc' },
             take: 50, // 最近50个任务
-          },
-          project: {
-            select: {
-              id: true,
-              name: true,
-              status: true,
-            },
           },
         },
       });
@@ -220,7 +213,7 @@ export class AgentModel {
       const where: Prisma.AgentWhereInput = { projectId };
 
       if (options.agentType) {
-        where.agentType = options.agentType;
+        where.type = options.agentType;
       }
 
       if (options.status) {
@@ -280,14 +273,14 @@ export class AgentModel {
   static async countByType(projectId: string): Promise<Record<string, number>> {
     try {
       const agents = await prisma.agent.groupBy({
-        by: ['agentType'],
+        by: ['type'],
         where: { projectId },
-        _count: { agentType: true },
+        _count: { type: true },
       });
 
       const result: Record<string, number> = {};
       agents.forEach(a => {
-        result[a.agentType] = a._count.agentType;
+        result[a.type] = a._count.type;
       });
 
       return result;
@@ -331,7 +324,7 @@ export class AgentModel {
       return await prisma.agent.findFirst({
         where: {
           projectId,
-          agentType,
+          type: agentType,
           status: { in: ['idle', 'active'] },
         },
         orderBy: { lastActiveAt: 'asc' }, // 选择最久没活动的
