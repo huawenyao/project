@@ -1,0 +1,220 @@
+// Prisma Schema for AI-Native Platform
+// Generated for: 001-ai-native-transformation
+// Reference: specs/001-ai-native-transformation/data-model.md
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===== User Model =====
+model User {
+  id            String    @id @default(uuid())
+  username      String    @unique @db.VarChar(50)
+  email         String    @unique @db.VarChar(255)
+  passwordHash  String    @db.VarChar(255)
+  fullName      String?   @db.VarChar(100)
+  avatarUrl     String?   @db.VarChar(500)
+  subscription  String    @default("free") @db.VarChar(20)
+  resourceQuota Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  projects      Project[]
+
+  @@map("users")
+}
+
+// ===== Project Model =====
+model Project {
+  id                  String   @id @default(uuid())
+  userId              String
+  name                String   @db.VarChar(200)
+  description         String?  @db.Text
+  requirementText     String   @db.Text
+  requirementSummary  Json?
+  status              String   @default("draft") @db.VarChar(20)
+  currentVersion      String?  @db.VarChar(50)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks               Task[]
+  components          Component[]
+  dataModels          DataModel[]
+  apiEndpoints        APIEndpoint[]
+  deployments         Deployment[]
+  versions            Version[]
+  buildLogs           BuildLog[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("projects")
+}
+
+// ===== Agent Model =====
+model Agent {
+  id           String   @id @default(uuid())
+  type         String   @db.VarChar(50)
+  name         String   @db.VarChar(100)
+  description  String?  @db.Text
+  capabilities Json
+  status       String   @default("idle") @db.VarChar(20)
+  performance  Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  tasks        Task[]
+
+  @@index([type])
+  @@index([status])
+  @@map("agents")
+}
+
+// ===== Task Model =====
+model Task {
+  id              String   @id @default(uuid())
+  projectId       String
+  agentId         String
+  type            String   @db.VarChar(100)
+  input           Json
+  output          Json?
+  status          String   @default("pending") @db.VarChar(20)
+  dependencies    String[]
+  priority        Int      @default(0)
+  executionTimeMs Int?
+  errorMessage    String?  @db.Text
+  retryCount      Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  startedAt       DateTime?
+  completedAt     DateTime?
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  agent           Agent    @relation(fields: [agentId], references: [id])
+  buildLogs       BuildLog[]
+
+  @@index([projectId])
+  @@index([agentId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("tasks")
+}
+
+// ===== Component Model =====
+model Component {
+  id          String   @id @default(uuid())
+  projectId   String
+  type        String   @db.VarChar(100)
+  name        String   @db.VarChar(200)
+  props       Json
+  styles      Json?
+  dataBinding Json?
+  events      Json?
+  parentId    String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([parentId])
+  @@map("components")
+}
+
+// ===== DataModel Model =====
+model DataModel {
+  id            String   @id @default(uuid())
+  projectId     String
+  tableName     String   @db.VarChar(100)
+  fields        Json
+  relationships Json?
+  indexes       Json?
+  description   String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  project       Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, tableName])
+  @@index([projectId])
+  @@map("data_models")
+}
+
+// ===== APIEndpoint Model =====
+model APIEndpoint {
+  id             String   @id @default(uuid())
+  projectId      String
+  path           String   @db.VarChar(500)
+  method         String   @db.VarChar(10)
+  requestSchema  Json?
+  responseSchema Json?
+  businessLogic  String?  @db.Text
+  dataModelId    String?
+  middleware     String[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, path, method])
+  @@index([projectId])
+  @@map("api_endpoints")
+}
+
+// ===== Deployment Model =====
+model Deployment {
+  id             String   @id @default(uuid())
+  projectId      String
+  environment    String   @db.VarChar(20)
+  status         String   @default("pending") @db.VarChar(20)
+  config         Json
+  logs           String?  @db.Text
+  accessUrl      String?  @db.VarChar(500)
+  healthCheckUrl String?  @db.VarChar(500)
+  errorMessage   String?  @db.Text
+  deployedAt     DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([environment])
+  @@index([status])
+  @@map("deployments")
+}
+
+// ===== Version Model =====
+model Version {
+  id            String   @id @default(uuid())
+  projectId     String
+  versionNumber String   @db.VarChar(50)
+  changelog     String?  @db.Text
+  snapshot      Json
+  createdBy     String?  @db.VarChar(100)
+  createdAt     DateTime @default(now())
+  project       Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, versionNumber])
+  @@index([projectId])
+  @@index([createdAt])
+  @@map("versions")
+}
+
+// ===== BuildLog Model =====
+model BuildLog {
+  id        String   @id @default(uuid())
+  projectId String
+  taskId    String?
+  level     String   @db.VarChar(20)
+  source    String   @db.VarChar(50)
+  message   String   @db.Text
+  metadata  Json?
+  timestamp DateTime @default(now())
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  task      Task?   @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([taskId])
+  @@index([level])
+  @@index([timestamp])
+  @@map("build_logs")
+}

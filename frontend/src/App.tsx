@@ -1,6 +1,8 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { ConfigProvider, theme as antdTheme } from 'antd'
 import { useAuth } from './contexts/AuthContext'
+import { lightTheme, darkTheme, type ThemeType } from './theme'
 
 // Layout components
 import Layout from './components/Layout/Layout'
@@ -23,31 +25,40 @@ import ErrorBoundary from './components/ErrorBoundary'
 
 function App() {
   const { user, loading } = useAuth()
+  // 主题状态（可以后续移到Context或Store中）
+  const [themeType, setThemeType] = useState<ThemeType>('light')
+
+  // 选择主题配置
+  const currentTheme = themeType === 'dark' ? darkTheme : lightTheme
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <LoadingSpinner size="lg" />
-      </div>
+      <ConfigProvider theme={currentTheme}>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+          <LoadingSpinner size="lg" />
+        </div>
+      </ConfigProvider>
     )
   }
 
   return (
-    <ErrorBoundary>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Routes>
-          {/* Public routes */}
-          <Route path="/auth/*" element={
-            user ? <Navigate to="/dashboard" replace /> : <AuthRoutes />
-          } />
-          
-          {/* Protected routes */}
-          <Route path="/*" element={
-            user ? <ProtectedRoutes /> : <Navigate to="/auth/login" replace />
-          } />
-        </Routes>
-      </div>
-    </ErrorBoundary>
+    <ConfigProvider theme={currentTheme}>
+      <ErrorBoundary>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+          <Routes>
+            {/* Public routes */}
+            <Route path="/auth/*" element={
+              user ? <Navigate to="/dashboard" replace /> : <AuthRoutes />
+            } />
+
+            {/* Protected routes */}
+            <Route path="/*" element={
+              user ? <ProtectedRoutes /> : <Navigate to="/auth/login" replace />
+            } />
+          </Routes>
+        </div>
+      </ErrorBoundary>
+    </ConfigProvider>
   )
 }
 

@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.67.0",
+    "@prisma/client": "^6.18.0",
     "aws-sdk": "^2.1692.0",
     "axios": "^1.6.0",
     "bcryptjs": "^2.4.3",
@@ -34,6 +35,7 @@
     "node-cron": "^4.2.1",
     "openai": "^4.20.1",
     "pg": "^8.11.3",
+    "prisma": "^6.18.0",
     "rate-limiter-flexible": "^2.4.2",
     "redis": "^4.6.10",
     "sequelize": "^6.37.7",
