@@ -228,10 +228,23 @@ export interface VisualizationUpdateEvent {
 
 export interface AgentStatusUpdate {
   statusId: string;
+  sessionId: string;
   agentType: AgentType;
   status: AgentStatus;
   progressPercentage: number;
   taskDescription: string;
+  currentOperation?: string;
+  startTime?: string;
+  retryCount?: number;
+  maxRetry?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  persona?: {
+    displayName: string;
+    avatarUrl?: string;
+    personalityTone: string;
+    description: string;
+  };
 }
 
 export interface DecisionMadeEvent {

@@ -9,10 +9,10 @@ import { DecisionRecord } from '../models/DecisionRecord.model';
 import { PreviewData } from '../models/PreviewData.model';
 import visualizationEmitter from '../websocket/visualizationEmitter';
 import logger from '../utils/logger';
+import { PreviewType } from '../types/visualization.types';
 
 export type DecisionImportance = 'critical' | 'high' | 'medium' | 'low';
 export type NotificationRoute = 'toast' | 'sidebar' | 'silent';
-export type PreviewType = 'image' | 'html' | 'json' | 'diagram' | 'code';
 
 interface PreviewDataInput {
   type: PreviewType;
