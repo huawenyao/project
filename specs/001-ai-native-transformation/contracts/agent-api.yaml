@@ -1,0 +1,204 @@
+openapi: 3.0.3
+info:
+  title: AI Builder - Agent API
+  description: API for Agent orchestration and management
+  version: 1.0.0
+  contact:
+    name: AI Builder Team
+
+servers:
+  - url: http://localhost:3001/api
+    description: Development server
+  - url: https://api.aibuilder.com
+    description: Production server
+
+tags:
+  - name: Agents
+    description: Agent management and orchestration
+  - name: Tasks
+    description: Task management and execution
+
+paths:
+  /agents/{projectId}:
+    get:
+      summary: Get all agents for a project
+      tags: [Agents]
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of agents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Agent'
+        '404':
+          description: Project not found
+
+  /agents/{projectId}/{agentType}/execute:
+    post:
+      summary: Execute an agent task
+      tags: [Agents]
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: agentType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [ui, backend, database, integration, deployment]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                  example: "generateUI"
+                parameters:
+                  type: object
+                  example: {"theme": "modern", "pages": 3}
+                context:
+                  type: object
+      responses:
+        '202':
+          description: Task accepted for execution
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '400':
+          description: Invalid request
+
+  /tasks/{taskId}:
+    get:
+      summary: Get task status
+      tags: [Tasks]
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
+components:
+  schemas:
+    Agent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        projectId:
+          type: string
+          format: uuid
+        agentType:
+          type: string
+          enum: [ui, backend, database, integration, deployment]
+        status:
+          type: string
+          enum: [idle, working, waiting, completed, failed]
+        currentTaskId:
+          type: string
+          format: uuid
+          nullable: true
+        currentTaskDescription:
+          type: string
+          nullable: true
+        progressPercentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+        output:
+          type: object
+          nullable: true
+        tasksCompleted:
+          type: integer
+        tasksFailed:
+          type: integer
+        avgTaskTimeMs:
+          type: integer
+          nullable: true
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        projectId:
+          type: string
+          format: uuid
+        agentId:
+          type: string
+          format: uuid
+        taskType:
+          type: string
+        description:
+          type: string
+        dependsOn:
+          type: array
+          items:
+            type: string
+            format: uuid
+        status:
+          type: string
+          enum: [pending, running, completed, failed, cancelled]
+        input:
+          type: object
+        output:
+          type: object
+          nullable: true
+        error:
+          type: object
+          nullable: true
+        executionTimeMs:
+          type: integer
+          nullable: true
+        retryCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    TaskResponse:
+      type: object
+      properties:
+        taskId:
+          type: string
+          format: uuid
+        status:
+          type: string
+        message:
+          type: string
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - BearerAuth: []
