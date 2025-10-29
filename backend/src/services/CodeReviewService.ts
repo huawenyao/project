@@ -124,24 +124,24 @@ ${code}
 
 请审查这段代码并返回JSON格式的结果。`;
 
-      const response = await this.aiService.generateText({
+      const response = await this.aiService.generateResponse(userPrompt, {
         systemPrompt,
         userPrompt,
         temperature: 0.3,
         maxTokens: 2000,
       });
 
-      if (!response.success || !response.data) {
+      if (!response || !response) {
         return {
           success: false,
-          error: response.error || 'AI审查失败',
+          error: 'AI审查失败',
         };
       }
 
       // 解析AI返回的JSON
       let result: CodeReviewResult;
       try {
-        const jsonMatch = response.data.match(/\{[\s\S]*\}/);
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
           throw new Error('无法从AI响应中提取JSON');
         }
@@ -314,21 +314,21 @@ ${modifiedCode}
 
 请分析这次修改的影响范围。`;
 
-      const response = await this.aiService.generateText({
+      const response = await this.aiService.generateResponse(userPrompt, {
         systemPrompt,
         userPrompt,
         temperature: 0.2,
         maxTokens: 1000,
       });
 
-      if (!response.success || !response.data) {
+      if (!response || !response) {
         return {
           success: false,
-          error: response.error || '影响分析失败',
+          error: '影响分析失败',
         };
       }
 
-      const jsonMatch = response.data.match(/\{[\s\S]*\}/);
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         return {
           success: false,
@@ -371,23 +371,23 @@ ${modifiedCode}
 
       const userPrompt = `语言: ${language}\n代码:\n\`\`\`${language}\n${code}\n\`\`\`\n\n请生成文档。`;
 
-      const response = await this.aiService.generateText({
+      const response = await this.aiService.generateResponse(userPrompt, {
         systemPrompt,
         userPrompt,
         temperature: 0.3,
         maxTokens: 1000,
       });
 
-      if (!response.success || !response.data) {
+      if (!response || !response) {
         return {
           success: false,
-          error: response.error || '文档生成失败',
+          error: '文档生成失败',
         };
       }
 
       return {
         success: true,
-        data: response.data,
+        data: response,
       };
     } catch (error: any) {
       logger.error('[CodeReview] Error generating documentation:', error);

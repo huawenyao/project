@@ -72,24 +72,23 @@ class NLPService {
 
       const userPrompt = `需求描述：\n${requirementText}`;
 
-      const response = await this.aiService.generateText({
+      const response = await this.aiService.generateResponse(userPrompt, {
         systemPrompt,
-        userPrompt,
         temperature: 0.3,
         maxTokens: 1000,
       });
 
-      if (!response.success || !response.data) {
+      if (!response) {
         return {
           success: false,
-          error: response.error || 'AI分析失败',
+          error: 'AI分析失败',
         };
       }
 
       // 解析AI返回的JSON
       let analysis: RequirementAnalysis;
       try {
-        const jsonMatch = response.data.match(/\{[\s\S]*\}/);
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
           throw new Error('无法从AI响应中提取JSON');
         }
@@ -148,18 +147,17 @@ class NLPService {
 
       const userPrompt = `原始需求：${requirementText}\n\n初步分析：${JSON.stringify(analysis, null, 2)}`;
 
-      const response = await this.aiService.generateText({
+      const response = await this.aiService.generateResponse(userPrompt, {
         systemPrompt,
-        userPrompt,
         temperature: 0.5,
         maxTokens: 500,
       });
 
-      if (!response.success || !response.data) {
+      if (!response) {
         return [];
       }
 
-      const jsonMatch = response.data.match(/\[[\s\S]*\]/);
+      const jsonMatch = response.match(/\[[\s\S]*\]/);
       if (!jsonMatch) {
         return [];
       }

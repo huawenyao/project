@@ -71,17 +71,17 @@ class CodeGenerationService {
 
 请生成完整的TSX代码。`;
 
-      const response = await this.aiService.generateText({
+      const response = await this.aiService.generateResponse(userPrompt, {
         systemPrompt,
         userPrompt,
         temperature: 0.2,
         maxTokens: 2000,
       });
 
-      if (!response.success || !response.data) {
+      if (!response || !response) {
         return {
           success: false,
-          error: response.error || '代码生成失败',
+          error: '代码生成失败',
         };
       }
 
@@ -89,7 +89,7 @@ class CodeGenerationService {
         success: true,
         data: {
           componentName: component.name,
-          tsx: response.data,
+          tsx: response,
         },
       };
     } catch (error: any) {
@@ -132,26 +132,26 @@ class CodeGenerationService {
 
 请生成完整的代码，包括路由、控制器和服务层。`;
 
-      const response = await this.aiService.generateText({
+      const response = await this.aiService.generateResponse(userPrompt, {
         systemPrompt,
         userPrompt,
         temperature: 0.2,
         maxTokens: 2000,
       });
 
-      if (!response.success || !response.data) {
+      if (!response || !response) {
         return {
           success: false,
-          error: response.error || '代码生成失败',
+          error: '代码生成失败',
         };
       }
 
       return {
         success: true,
         data: {
-          route: response.data,
-          controller: response.data,
-          service: response.data,
+          route: response,
+          controller: response,
+          service: response,
           test: '',
         },
       };
@@ -192,23 +192,23 @@ class CodeGenerationService {
 
 请生成Prisma Schema定义。`;
 
-      const response = await this.aiService.generateText({
+      const response = await this.aiService.generateResponse(userPrompt, {
         systemPrompt,
         userPrompt,
         temperature: 0.1,
         maxTokens: 1000,
       });
 
-      if (!response.success || !response.data) {
+      if (!response || !response) {
         return {
           success: false,
-          error: response.error || '迁移脚本生成失败',
+          error: '迁移脚本生成失败',
         };
       }
 
       return {
         success: true,
-        data: response.data,
+        data: response,
       };
     } catch (error: any) {
       logger.error('[CodeGen] Error generating migration:', error);
@@ -276,23 +276,23 @@ class CodeGenerationService {
 
       const userPrompt = `${target.type === 'component' ? '组件' : 'API'}代码：\n${target.code}\n\n请生成完整的测试代码。`;
 
-      const response = await this.aiService.generateText({
+      const response = await this.aiService.generateResponse(userPrompt, {
         systemPrompt,
         userPrompt,
         temperature: 0.2,
         maxTokens: 1500,
       });
 
-      if (!response.success || !response.data) {
+      if (!response || !response) {
         return {
           success: false,
-          error: response.error || '测试代码生成失败',
+          error: '测试代码生成失败',
         };
       }
 
       return {
         success: true,
-        data: response.data,
+        data: response,
       };
     } catch (error: any) {
       logger.error('[CodeGen] Error generating test:', error);
