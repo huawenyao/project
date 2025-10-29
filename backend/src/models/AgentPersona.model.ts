@@ -50,9 +50,9 @@ export class AgentPersona extends Model<AgentPersonaData, AgentPersonaCreationAt
 
   @CreatedAt
   @Column({ field: 'created_at' })
-  createdAt!: Date;
+  override createdAt!: Date;
 
   @UpdatedAt
   @Column({ field: 'updated_at' })
-  updatedAt!: Date;
+  override updatedAt!: Date;
 }

@@ -15,7 +15,7 @@ export class TaskModel {
   static async create(data: {
     projectId: string;
     agentId: string;
-    taskType: string;
+    type: string;
     description: string;
     input?: any;
     dependencies?: any;
@@ -27,7 +27,7 @@ export class TaskModel {
         data: {
           projectId: data.projectId,
           agentId: data.agentId,
-          type: data.taskType,
+          type: data.type,
           description: data.description,
           input: data.input,
           dependencies: data.dependencies || [],
@@ -104,7 +104,7 @@ export class TaskModel {
       progress: number;
       priority: number;
       estimatedDuration: number;
-      actualDuration: number;
+      executionTimeMs: number;
       retryCount: number;
       startedAt: Date;
       completedAt: Date;
@@ -261,7 +261,7 @@ export class TaskModel {
       skip?: number;
       take?: number;
       status?: string;
-      taskType?: string;
+      type?: string;
       orderBy?: Prisma.TaskOrderByWithRelationInput;
     } = {}
   ): Promise<Task[]> {
@@ -272,8 +272,8 @@ export class TaskModel {
         where.status = options.status;
       }
 
-      if (options.taskType) {
-        where.taskType = options.taskType;
+      if (options.type) {
+        where.type = options.type;
       }
 
       return await prisma.task.findMany({
@@ -393,14 +393,14 @@ export class TaskModel {
   static async countByType(projectId: string): Promise<Record<string, number>> {
     try {
       const tasks = await prisma.task.groupBy({
-        by: ['taskType'],
+        by: ['type'],
         where: { projectId },
-        _count: { taskType: true },
+        _count: { type: true },
       });
 
       const result: Record<string, number> = {};
       tasks.forEach(t => {
-        result[t.taskType] = t._count.taskType;
+        result[t.type] = t._count.type;
       });
 
       return result;
@@ -435,13 +435,13 @@ export class TaskModel {
         where: {
           projectId,
           status: 'completed',
-          actualDuration: { not: null },
+          executionTimeMs: { not: null },
         },
-        select: { actualDuration: true },
+        select: { executionTimeMs: true },
       });
 
       const averageDuration = completedTasks.length > 0
-        ? completedTasks.reduce((sum, t) => sum + (t.actualDuration || 0), 0) / completedTasks.length
+        ? completedTasks.reduce((sum, t) => sum + (t.executionTimeMs || 0), 0) / completedTasks.length
         : null;
 
       return {

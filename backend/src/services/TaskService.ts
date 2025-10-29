@@ -68,7 +68,7 @@ export class TaskService {
       const task = await TaskModel.create({
         projectId: data.projectId,
         agentId: data.agentId,
-        taskType: data.taskType,
+        type: data.taskType,
         description: data.description,
         input: data.input,
         dependencies: data.dependencies || [],
@@ -76,7 +76,7 @@ export class TaskService {
         estimatedDuration: data.estimatedDuration,
       });
 
-      logger.info(`Task created: ${task.id} (type: ${task.taskType}, agent: ${task.agentId})`);
+      logger.info(`Task created: ${task.id} (type: ${task.type}, agent: ${task.agentId})`);
       return task;
     } catch (error: any) {
       logger.error('Failed to create task:', error);

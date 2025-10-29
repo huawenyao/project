@@ -45,11 +45,15 @@ export interface AgentWorkStatusData {
   retryCount: number;
   maxRetry: number;
   lastError?: string;
+  currentOperation?: string;
+  estimatedTimeRemaining?: number;
+  errorMessage?: string;
+  resultSummary?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface AgentWorkStatusCreationAttributes extends Optional<AgentWorkStatusData, 'statusId' | 'startTime' | 'endTime' | 'retryCount' | 'maxRetry' | 'lastError' | 'createdAt' | 'updatedAt'> {}
+export interface AgentWorkStatusCreationAttributes extends Optional<AgentWorkStatusData, 'statusId' | 'startTime' | 'endTime' | 'retryCount' | 'maxRetry' | 'lastError' | 'currentOperation' | 'estimatedTimeRemaining' | 'errorMessage' | 'resultSummary' | 'createdAt' | 'updatedAt'> {}
 
 // ==================== Decision Record ====================
 
@@ -69,15 +73,22 @@ export interface DecisionRecordData {
   agentType: AgentType;
   decisionType: DecisionType;
   decisionTitle: string;
+  decisionContent?: string;
   reasoning: DecisionReasoning;
+  alternatives?: any;
+  tradeoffs?: string;
   impact: DecisionImpact;
+  importance?: string;
+  tags?: string[];
+  metadata?: any;
   affectedComponents: string[];
   timestamp: string;
+  isRead: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface DecisionRecordCreationAttributes extends Optional<DecisionRecordData, 'decisionId' | 'createdAt' | 'updatedAt'> {}
+export interface DecisionRecordCreationAttributes extends Optional<DecisionRecordData, 'decisionId' | 'isRead' | 'decisionContent' | 'alternatives' | 'tradeoffs' | 'importance' | 'tags' | 'metadata' | 'createdAt' | 'updatedAt'> {}
 
 // ==================== Agent Error Record ====================
 

@@ -17,7 +17,7 @@ export class VersionModel {
     versionNumber: string;
     description?: string;
     snapshot: any;
-    changeLog?: string;
+    changelog?: string;
   }): Promise<Version> {
     try {
       const version = await prisma.version.create({
@@ -26,7 +26,7 @@ export class VersionModel {
           versionNumber: data.versionNumber,
           description: data.description,
           snapshot: data.snapshot,
-          changeLog: data.changeLog,
+          changelog: data.changelog,
         },
       });
 
@@ -140,7 +140,7 @@ export class VersionModel {
     id: string,
     data: Partial<{
       description: string;
-      changeLog: string;
+      changelog: string;
       snapshot: any;
     }>
   ): Promise<Version> {

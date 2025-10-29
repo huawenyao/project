@@ -80,7 +80,7 @@ export class AgentOrchestrator extends EventEmitter {
       sessionId: request.requestId,
       userId: request.userId,
       projectId: request.projectId,
-      startTime: new Date(),
+      startTime: new Date().toISOString(),
       status: 'in_progress',
       agentList: [],
       archived: false,

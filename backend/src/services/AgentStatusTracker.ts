@@ -6,10 +6,10 @@
  * T096: [US3] Add persona data to agent status updates
  */
 
-import AgentWorkStatus from '../models/AgentWorkStatus.model';
+import { AgentWorkStatus } from '../models/AgentWorkStatus.model';
 import { AgentPersona } from '../models/AgentPersona.model';
-import { visualizationEmitter } from '../websocket/visualizationEmitter';
-import logger from '../utils/logger';
+import visualizationEmitter from '../websocket/visualizationEmitter';
+import { logger } from '../utils/logger';
 
 export type AgentType = 'UIAgent' | 'BackendAgent' | 'DatabaseAgent' | 'IntegrationAgent' | 'DeploymentAgent';
 export type AgentStatus = 'pending' | 'in_progress' | 'completed' | 'failed' | 'retrying' | 'skipped';
@@ -50,15 +50,16 @@ class AgentStatusTracker {
       // 创建新的状态记录
       const status = await AgentWorkStatus.create({
         sessionId,
+        agentId: agentType, // 使用 agentType 作为 agentId
         agentType,
         status: 'in_progress',
         taskDescription,
         progressPercentage: 0,
         currentOperation: 'Initializing...',
-        estimatedDuration: estimatedDuration || null,
+        estimatedTimeRemaining: estimatedDuration || null,
         retryCount: 0,
         maxRetry: 3,
-        startTime: new Date(),
+        startTime: new Date().toISOString(),
       });
 
       // T096: 获取 Agent 的 persona 数据
@@ -187,7 +188,7 @@ class AgentStatusTracker {
         progressPercentage: 100,
         currentOperation: 'Completed',
         resultSummary: resultSummary || null,
-        endTime: new Date(),
+        endTime: new Date().toISOString(),
         updatedAt: new Date(),
       });
 
@@ -255,7 +256,7 @@ class AgentStatusTracker {
         errorMessage,
         retryCount: newRetryCount,
         currentOperation: shouldRetry ? `Retrying (${newRetryCount}/${status.maxRetry})...` : 'Failed',
-        endTime: shouldRetry ? null : new Date(),
+        endTime: shouldRetry ? null : new Date().toISOString(),
         updatedAt: new Date(),
       });
 
@@ -316,8 +317,8 @@ class AgentStatusTracker {
         currentOperation: 'Skipped',
         retryCount: 0,
         maxRetry: 0,
-        startTime: new Date(),
-        endTime: new Date(),
+        startTime: new Date().toISOString(),
+        endTime: new Date().toISOString(),
       });
 
       logger.info(`[AgentStatusTracker] ${agentType} skipped: ${reason}`);

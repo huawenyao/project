@@ -77,9 +77,10 @@ export class ProjectModel {
           tasks: {
             orderBy: { createdAt: 'asc' },
           },
-          agents: {
-            orderBy: { createdAt: 'asc' },
-          },
+          // 注：agents关系暂时禁用，等待Prisma类型生成完成
+          // agents: {
+          //   orderBy: { createdAt: 'asc' },
+          // },
           components: {
             orderBy: { createdAt: 'asc' },
           },

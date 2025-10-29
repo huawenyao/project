@@ -10,7 +10,7 @@ import dotenv from 'dotenv';
 import { errorHandler } from './middleware/errorHandler';
 import { rateLimiter } from './middleware/rateLimiter';
 import { logger } from './utils/logger';
-import { AgentOrchestrator } from './services/AgentOrchestrator';
+// import { AgentOrchestrator } from './services/AgentOrchestrator'; // 临时禁用：存在编译错误
 import { DatabaseService } from './services/DatabaseService';
 import { WebSocketService } from './services/WebSocketService';
 
@@ -21,8 +21,8 @@ import projectRoutes from './routes/project.routes';
 import agentRoutesNew from './routes/agent.routes';
 import taskRoutes from './routes/task.routes';
 
-// Old Routes (Legacy)
-import agentRoutes from './routes/agentRoutes';
+// Old Routes (Legacy) - 临时禁用：依赖有编译错误的 AgentOrchestrator
+// import agentRoutes from './routes/agentRoutes';
 import appRoutes from './routes/appRoutes';
 import builderRoutes from './routes/builderRoutes';
 import visualizationRoutes from './routes/visualizationRoutes';
@@ -72,7 +72,7 @@ app.use('/api/agents-v2', agentRoutesNew);
 app.use('/api/tasks', taskRoutes);
 
 // API Routes - Legacy
-app.use('/api/agents', agentRoutes);
+// app.use('/api/agents', agentRoutes); // 临时禁用：依赖有编译错误的 AgentOrchestrator
 app.use('/api/apps', appRoutes);
 app.use('/api/builder', builderRoutes);
 app.use('/api/visualization', visualizationRoutes);
@@ -123,8 +123,8 @@ async function startServer() {
     logger.info('✅ WebSocket service initialized');
 
     // Initialize agent orchestrator
-    AgentOrchestrator.getInstance();
-    logger.info('✅ Agent orchestrator initialized');
+    // AgentOrchestrator.getInstance(); // 临时禁用：存在编译错误
+    // logger.info('✅ Agent orchestrator initialized');
 
     server.listen(Number(PORT), '0.0.0.0', () => {
       logger.info(`🚀 AI Agent App Builder Backend running on port ${PORT}`);

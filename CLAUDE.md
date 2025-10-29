@@ -6,6 +6,59 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **所有与用户的交互必须使用中文（简体中文）。** 详见 `claude.md` 文件。
 
+## ⚠️ 关键注意事项（必读）
+
+### ORM 迁移状态
+
+**项目正在从 Sequelize 迁移到 Prisma，两套系统目前共存：**
+
+- **Prisma**（新系统）：
+  - Schema 文件：`backend/prisma/schema.prisma`
+  - 用于所有新功能开发
+  - 字段命名：使用 `type`（不是 `taskType` 或 `agentType`）
+  - 修改 schema 后**必须**运行 `npx prisma generate`
+
+- **Sequelize**（遗留系统）：
+  - 模型文件：`backend/src/models/*.model.ts`
+  - 仍在可视化相关功能中使用
+  - 不要删除这些文件，部分 Service 仍依赖
+
+### 字段命名规范
+
+**统一使用以下字段名（避免混淆）：**
+
+| 模型 | 正确字段名 | ❌ 错误示例 |
+|------|-----------|------------|
+| Task | `type` | ~~taskType~~ |
+| Agent | `type` | ~~agentType~~ |
+| Project | `status` | ~~projectStatus~~ |
+
+### 启动前必做步骤
+
+每次修改数据库 Schema 或遇到类型错误时：
+
+```bash
+# 1. 更新 Prisma 客户端
+cd backend
+npx prisma generate
+
+# 2. 类型检查（修复所有错误后再启动）
+npx tsc --noEmit
+
+# 3. 启动服务
+npm run dev
+```
+
+### 依赖版本约定
+
+**前端 React Query：**
+- ✅ 正确：`@tanstack/react-query`
+- ❌ 错误：`react-query`（旧版本，不要使用）
+
+**后端 VisualizationEmitter：**
+- ✅ 正确：`import visualizationEmitter from '../websocket/visualizationEmitter'`（default import）
+- ❌ 错误：`VisualizationEmitter.getInstance()`（该方法不存在）
+
 ## 项目概述
 
 AI-Native Agent App Builder Engine - 一个革命性的平台，将传统的无代码应用构建转变为智能的、代理驱动的体验。用户使用自然语言描述需求，AI 代理自动构建、配置和部署应用程序。

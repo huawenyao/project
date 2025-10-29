@@ -9,5 +9,5 @@ export { default as agentStatusService } from './AgentStatusService';
 export { default as decisionService } from './DecisionService';
 export { default as errorService } from './ErrorService';
 export { default as collaborationService } from './CollaborationService';
-export { default as aiService } from './AIService';
-export { default as databaseService } from './DatabaseService';
+export { AIService } from './AIService';
+export { DatabaseService } from './DatabaseService';

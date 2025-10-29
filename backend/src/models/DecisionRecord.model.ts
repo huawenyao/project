@@ -40,8 +40,17 @@ export class DecisionRecord extends Model<DecisionRecordData, DecisionRecordCrea
   @Column({ type: DataType.STRING(200), allowNull: false, field: 'decision_title' })
   decisionTitle!: string;
 
+  @Column({ type: DataType.TEXT, allowNull: true, field: 'decision_content' })
+  decisionContent?: string;
+
   @Column({ type: DataType.JSONB, allowNull: false })
   reasoning!: any;
+
+  @Column({ type: DataType.JSONB, allowNull: true })
+  alternatives?: any;
+
+  @Column({ type: DataType.TEXT, allowNull: true })
+  tradeoffs?: string;
 
   @Column({
     type: DataType.ENUM('high', 'medium', 'low'),
@@ -49,19 +58,35 @@ export class DecisionRecord extends Model<DecisionRecordData, DecisionRecordCrea
   })
   impact!: DecisionImpact;
 
+  @Column({
+    type: DataType.ENUM('critical', 'high', 'medium', 'low'),
+    allowNull: true,
+  })
+  importance?: string;
+
+  @Column({ type: DataType.ARRAY(DataType.STRING), allowNull: true })
+  tags?: string[];
+
+  @Column({ type: DataType.JSONB, allowNull: true })
+  metadata?: any;
+
   @Column({ type: DataType.ARRAY(DataType.STRING), allowNull: false, field: 'affected_components' })
   affectedComponents!: string[];
 
   @Column({ type: DataType.DATE, allowNull: false })
   timestamp!: Date;
 
+  @Default(false)
+  @Column({ type: DataType.BOOLEAN, allowNull: false, field: 'is_read' })
+  isRead!: boolean;
+
   @CreatedAt
   @Column({ field: 'created_at' })
-  createdAt!: Date;
+  override createdAt!: Date;
 
   @UpdatedAt
   @Column({ field: 'updated_at' })
-  updatedAt!: Date;
+  override updatedAt!: Date;
 
   @BelongsTo(() => BuildSession)
   buildSession!: BuildSession;

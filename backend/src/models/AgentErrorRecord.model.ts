@@ -59,11 +59,11 @@ export class AgentErrorRecord extends Model<ErrorRecordData, ErrorRecordCreation
 
   @CreatedAt
   @Column({ field: 'created_at' })
-  createdAt!: Date;
+  override createdAt!: Date;
 
   @UpdatedAt
   @Column({ field: 'updated_at' })
-  updatedAt!: Date;
+  override updatedAt!: Date;
 
   @BelongsTo(() => BuildSession)
   buildSession!: BuildSession;

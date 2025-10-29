@@ -69,13 +69,25 @@ export class AgentWorkStatus extends Model<AgentWorkStatusData, AgentWorkStatusC
   @Column({ type: DataType.TEXT, allowNull: true, field: 'last_error' })
   lastError?: string;
 
+  @Column({ type: DataType.TEXT, allowNull: true, field: 'current_operation' })
+  currentOperation?: string;
+
+  @Column({ type: DataType.INTEGER, allowNull: true, field: 'estimated_time_remaining' })
+  estimatedTimeRemaining?: number;
+
+  @Column({ type: DataType.TEXT, allowNull: true, field: 'error_message' })
+  errorMessage?: string;
+
+  @Column({ type: DataType.TEXT, allowNull: true, field: 'result_summary' })
+  resultSummary?: string;
+
   @CreatedAt
   @Column({ field: 'created_at' })
-  createdAt!: Date;
+  override createdAt!: Date;
 
   @UpdatedAt
   @Column({ field: 'updated_at' })
-  updatedAt!: Date;
+  override updatedAt!: Date;
 
   @BelongsTo(() => BuildSession)
   buildSession!: BuildSession;

@@ -93,7 +93,7 @@ export class AgentService {
       };
 
       const agent = await AgentModel.create(agentData);
-      logger.info(`Agent created: ${agent.id} (${agent.name}, type: ${agent.agentType})`);
+      logger.info(`Agent created: ${agent.id} (${agent.name}, type: ${agent.type})`);
 
       return agent;
     } catch (error: any) {

@@ -60,11 +60,11 @@ export class BuildSession extends Model<BuildSessionData, BuildSessionCreationAt
 
   @CreatedAt
   @Column({ field: 'created_at' })
-  createdAt!: Date;
+  override createdAt!: Date;
 
   @UpdatedAt
   @Column({ field: 'updated_at' })
-  updatedAt!: Date;
+  override updatedAt!: Date;
 
   // Associations
   @HasMany(() => AgentWorkStatus)

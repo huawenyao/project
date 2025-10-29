@@ -5,9 +5,9 @@
  * 负责决策重要性分类、通知路由、预览数据生成
  */
 
-import DecisionRecord from '../models/DecisionRecord.model';
+import { DecisionRecord } from '../models/DecisionRecord.model';
 import { PreviewData } from '../models/PreviewData.model';
-import { visualizationEmitter } from '../websocket/visualizationEmitter';
+import visualizationEmitter from '../websocket/visualizationEmitter';
 import logger from '../utils/logger';
 
 export type DecisionImportance = 'critical' | 'high' | 'medium' | 'low';
@@ -60,17 +60,19 @@ class DecisionManager {
       const decision = await DecisionRecord.create({
         sessionId: input.sessionId,
         agentType: input.agentType as any,
+        decisionType: 'other' as any,
         decisionTitle: input.decisionTitle,
         decisionContent: input.decisionContent,
-        reasoning: input.reasoning,
+        reasoning: input.reasoning as any,
         alternatives: input.alternatives || [],
         tradeoffs: input.tradeoffs || null,
-        impact: input.impact || null,
+        impact: (input.impact || 'medium') as any,
         importance,
         tags: input.tags || [],
         metadata: input.metadata || {},
+        affectedComponents: [],
         isRead: false,
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
       });
 
       // 如果有预览数据，创建关联的预览记录
@@ -88,7 +90,7 @@ class DecisionManager {
       const route = this.determineNotificationRoute(importance);
 
       // 触发 WebSocket 事件（带优先级和预览数据）
-      this.emitDecisionCreated(decision, route, previewData);
+      this.emitDecisionMade(decision, route, previewData);
 
       return {
         success: true,
@@ -165,7 +167,7 @@ class DecisionManager {
   /**
    * 触发决策创建事件
    */
-  private emitDecisionCreated(
+  private emitDecisionMade(
     decision: DecisionRecord,
     route: NotificationRoute,
     previewData?: PreviewData | null
@@ -203,7 +205,7 @@ class DecisionManager {
       };
     }
 
-    visualizationEmitter.emitDecisionCreated(
+    visualizationEmitter.emitDecisionMade(
       decision.sessionId,
       eventData,
       priority as any
@@ -385,7 +387,7 @@ class DecisionManager {
           description: previewInput.description,
           metadata: previewInput.metadata || {},
         },
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
       });
 
       return previewData;

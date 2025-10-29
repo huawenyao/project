@@ -334,16 +334,17 @@ export class ProjectService {
       };
 
       // 如果正在构建，估算剩余时间
-      if (project.status === 'building' && project.startedAt) {
-        const elapsed = Date.now() - project.startedAt.getTime();
-        const progressPercent = project.progress || 0;
-
-        if (progressPercent > 0) {
-          const estimatedTotal = (elapsed / progressPercent) * 100;
-          const remaining = estimatedTotal - elapsed;
-          result.estimatedTimeRemaining = Math.max(0, Math.round(remaining / 1000)); // 转换为秒
-        }
-      }
+      // 注：startedAt 字段暂未在 Project 模型中定义，临时禁用此功能
+      // if (project.status === 'building' && project.startedAt) {
+      //   const elapsed = Date.now() - project.startedAt.getTime();
+      //   const progressPercent = project.progress || 0;
+      //
+      //   if (progressPercent > 0) {
+      //     const estimatedTotal = (elapsed / progressPercent) * 100;
+      //     const remaining = estimatedTotal - elapsed;
+      //     result.estimatedTimeRemaining = Math.max(0, Math.round(remaining / 1000)); // 转换为秒
+      //   }
+      // }
 
       return result;
     } catch (error: any) {
