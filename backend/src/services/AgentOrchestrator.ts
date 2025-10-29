@@ -219,22 +219,212 @@ export class AgentOrchestrator extends EventEmitter {
     return mapping[agentType] || 'UIAgent';
   }
 
+  /**
+   * T027: 需求分解逻辑
+   * 将用户需求分解为可执行的任务列表
+   */
+  async decomposeRequirement(requirementText: string, nlpAnalysis?: any): Promise<any[]> {
+    try {
+      logger.info('[AgentOrchestrator] Decomposing requirement...');
+
+      // 构建更详细的分解提示词
+      const systemPrompt = `你是一个专业的项目规划专家。将用户的应用需求分解为具体的、可执行的任务。
+
+每个任务应该包含：
+- taskId: 唯一标识符（如 "task-1"）
+- agentType: 负责的 Agent 类型（ui/backend/database/integration/deployment）
+- action: 具体操作描述
+- parameters: 任务参数（对象）
+- dependencies: 依赖的任务ID列表
+- estimatedDuration: 预估耗时（秒）
+- critical: 是否关键任务（失败后中止整个流程）
+
+返回 JSON 数组格式。`;
+
+      const userPrompt = `
+需求描述：${requirementText}
+
+${nlpAnalysis ? `AI 分析结果：
+- 应用类型：${nlpAnalysis.appType}
+- 功能列表：${nlpAnalysis.features?.join(', ')}
+- 数据实体：${nlpAnalysis.entities?.join(', ')}
+- 复杂度：${nlpAnalysis.complexity}
+` : ''}
+
+请将上述需求分解为具体的任务列表。`;
+
+      const response = await this.aiService.generateResponse(userPrompt, {
+        systemPrompt,
+        temperature: 0.3,
+        maxTokens: 2000,
+      });
+
+      const tasks = this.parseExecutionPlan(response);
+      logger.info(`[AgentOrchestrator] Decomposed into ${tasks.length} tasks`);
+
+      return tasks;
+    } catch (error) {
+      logger.error('[AgentOrchestrator] Error decomposing requirement:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * T028: 构建任务依赖图
+   * 基于任务的依赖关系构建 DAG（有向无环图）
+   */
+  buildDependencyGraph(tasks: any[]): Map<string, string[]> {
+    const graph = new Map<string, string[]>();
+
+    for (const task of tasks) {
+      graph.set(task.taskId || task.id, task.dependencies || []);
+    }
+
+    // 验证是否存在循环依赖
+    this.validateNoCycles(graph);
+
+    logger.info('[AgentOrchestrator] Dependency graph built successfully');
+    return graph;
+  }
+
+  /**
+   * 验证依赖图中没有循环依赖
+   */
+  private validateNoCycles(graph: Map<string, string[]>): void {
+    const visited = new Set<string>();
+    const recursionStack = new Set<string>();
+
+    const hasCycle = (node: string): boolean => {
+      visited.add(node);
+      recursionStack.add(node);
+
+      const dependencies = graph.get(node) || [];
+      for (const dep of dependencies) {
+        if (!visited.has(dep)) {
+          if (hasCycle(dep)) {
+            return true;
+          }
+        } else if (recursionStack.has(dep)) {
+          return true;
+        }
+      }
+
+      recursionStack.delete(node);
+      return false;
+    };
+
+    for (const node of graph.keys()) {
+      if (!visited.has(node) && hasCycle(node)) {
+        throw new Error('检测到循环依赖，无法执行任务');
+      }
+    }
+  }
+
+  /**
+   * T029: 任务调度
+   * 按依赖关系调度任务，支持并行执行独立任务
+   */
+  async scheduleTask(taskId: string, allTasks: any[], graph: Map<string, string[]>): Promise<void> {
+    const task = allTasks.find(t => (t.taskId || t.id) === taskId);
+    if (!task) {
+      throw new Error(`任务不存在: ${taskId}`);
+    }
+
+    // 检查依赖是否已完成
+    const dependencies = graph.get(taskId) || [];
+    for (const depId of dependencies) {
+      const depTask = allTasks.find(t => (t.taskId || t.id) === depId);
+      if (depTask && depTask.status !== 'completed') {
+        logger.warn(`[AgentOrchestrator] Task ${taskId} waiting for dependency ${depId}`);
+        throw new Error(`依赖任务 ${depId} 尚未完成`);
+      }
+    }
+
+    // 执行任务
+    logger.info(`[AgentOrchestrator] Scheduling task: ${taskId}`);
+    task.status = 'running';
+
+    const agent = this.agents.get(task.agentType);
+    if (!agent) {
+      throw new Error(`Agent 不存在: ${task.agentType}`);
+    }
+
+    try {
+      const result = await agent.execute(task.action, task.parameters, {
+        projectId: task.projectId,
+        userId: task.userId,
+      });
+
+      task.status = 'completed';
+      task.result = result;
+      logger.info(`[AgentOrchestrator] Task completed: ${taskId}`);
+    } catch (error) {
+      task.status = 'failed';
+      task.error = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`[AgentOrchestrator] Task failed: ${taskId}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 拓扑排序，获取任务执行顺序
+   */
+  private topologicalSort(graph: Map<string, string[]>): string[] {
+    const inDegree = new Map<string, number>();
+    const result: string[] = [];
+
+    // 计算入度
+    for (const node of graph.keys()) {
+      inDegree.set(node, 0);
+    }
+    for (const [_, dependencies] of graph.entries()) {
+      for (const dep of dependencies) {
+        inDegree.set(dep, (inDegree.get(dep) || 0) + 1);
+      }
+    }
+
+    // 找到所有入度为 0 的节点
+    const queue: string[] = [];
+    for (const [node, degree] of inDegree.entries()) {
+      if (degree === 0) {
+        queue.push(node);
+      }
+    }
+
+    // BFS 遍历
+    while (queue.length > 0) {
+      const node = queue.shift()!;
+      result.push(node);
+
+      const dependencies = graph.get(node) || [];
+      for (const dep of dependencies) {
+        const newDegree = (inDegree.get(dep) || 0) - 1;
+        inDegree.set(dep, newDegree);
+        if (newDegree === 0) {
+          queue.push(dep);
+        }
+      }
+    }
+
+    return result;
+  }
+
   private async createExecutionPlan(request: AgentRequest): Promise<any[]> {
     const prompt = `
     Analyze this app building request and create an execution plan:
-    
+
     Request Type: ${request.type}
     Description: ${request.description}
     Requirements: ${request.requirements?.join(', ') || 'None specified'}
     Constraints: ${request.constraints?.join(', ') || 'None specified'}
-    
+
     Available agents:
     - ui: Creates user interfaces, components, layouts
     - backend: Handles APIs, business logic, server-side code
     - database: Designs schemas, manages data models
     - integration: Connects external services and APIs
     - deployment: Handles app deployment and infrastructure
-    
+
     Create a step-by-step execution plan with the following format:
     [
       {
@@ -242,10 +432,11 @@ export class AgentOrchestrator extends EventEmitter {
         "action": "specific_action_description",
         "parameters": { "key": "value" },
         "critical": true/false,
-        "dependencies": ["previous_step_ids"]
+        "dependencies": ["previous_step_ids"],
+        "estimatedDuration": 10
       }
     ]
-    
+
     Consider dependencies between steps and mark critical steps that would cause the entire process to fail if they don't succeed.
     `;
 
@@ -254,17 +445,17 @@ export class AgentOrchestrator extends EventEmitter {
         temperature: 0.3,
         maxTokens: 2000
       });
-      
+
       // Parse the AI response to extract the execution plan
       const plan = this.parseExecutionPlan(planResponse);
-      
+
       logger.info(`Created execution plan with ${plan.length} steps for request ${request.requestId}`);
-      
+
       return plan;
-      
+
     } catch (error) {
       logger.error('Failed to create execution plan:', error);
-      
+
       // Fallback to a basic plan based on request type
       return this.createFallbackPlan(request);
     }
@@ -353,6 +544,97 @@ export class AgentOrchestrator extends EventEmitter {
     return Array.from(this.activeRequests.values());
   }
 
+  /**
+   * T041: 错误处理和重试逻辑
+   * 实现指数退避重试策略
+   */
+  async retryWithBackoff<T>(
+    operation: () => Promise<T>,
+    options: {
+      maxRetries?: number;
+      baseDelay?: number;
+      maxDelay?: number;
+      taskName?: string;
+    } = {}
+  ): Promise<T> {
+    const {
+      maxRetries = 3,
+      baseDelay = 1000,
+      maxDelay = 10000,
+      taskName = 'operation',
+    } = options;
+
+    let lastError: Error;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+
+        if (attempt === maxRetries) {
+          logger.error(`[AgentOrchestrator] ${taskName} failed after ${maxRetries} attempts:`, lastError);
+          break;
+        }
+
+        // 计算退避延迟（指数增长）
+        const delay = Math.min(baseDelay * Math.pow(2, attempt - 1), maxDelay);
+        logger.warn(`[AgentOrchestrator] ${taskName} failed (attempt ${attempt}/${maxRetries}), retrying in ${delay}ms...`, lastError.message);
+
+        // 等待后重试
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+
+    throw lastError!;
+  }
+
+  /**
+   * 包装 Agent 执行，添加超时和错误处理
+   */
+  private async executeAgentWithTimeout(
+    agent: any,
+    action: string,
+    parameters: any,
+    context: any,
+    timeoutMs: number = 60000
+  ): Promise<any> {
+    return Promise.race([
+      agent.execute(action, parameters, context),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(`Agent 执行超时（${timeoutMs}ms）`)), timeoutMs)
+      ),
+    ]);
+  }
+
+  /**
+   * 处理任务失败，决定是否应该重试
+   */
+  private shouldRetryTask(task: any, error: Error): boolean {
+    // 不重试的情况
+    if (task.retryCount >= 3) {
+      return false;
+    }
+
+    // 验证错误不重试
+    if (error.message.includes('验证') || error.message.includes('validation')) {
+      return false;
+    }
+
+    // 超时或临时错误可以重试
+    if (
+      error.message.includes('超时') ||
+      error.message.includes('timeout') ||
+      error.message.includes('ECONNREFUSED') ||
+      error.message.includes('ETIMEDOUT')
+    ) {
+      return true;
+    }
+
+    // 默认关键任务不重试，非关键任务可以重试
+    return !task.critical;
+  }
+
   public cancelRequest(requestId: string): boolean {
     if (this.activeRequests.has(requestId)) {
       this.activeRequests.delete(requestId);
@@ -364,7 +646,7 @@ export class AgentOrchestrator extends EventEmitter {
 
   public getAgentStatus(): any {
     const status = {};
-    
+
     this.agents.forEach((agent, type) => {
       status[type] = {
         available: agent.isAvailable(),
@@ -372,7 +654,7 @@ export class AgentOrchestrator extends EventEmitter {
         lastActivity: agent.getLastActivity?.() || null
       };
     });
-    
+
     return {
       totalAgents: this.agents.size,
       activeRequests: this.activeRequests.size,

@@ -130,9 +130,9 @@ US6 (P3) ─────────────────┘
 
 ### 2.4 前端基础组件
 
-- [ ] T020 [P] 创建WebSocket Hook in frontend/src/hooks/useWebSocket.ts
-- [ ] T021 [P] 创建Project状态Store in frontend/src/stores/projectStore.ts
-- [ ] T022 [P] 创建Agent状态Store in frontend/src/stores/agentStore.ts
+- [x] T020 [P] 创建WebSocket Hook in frontend/src/hooks/useWebSocket.ts (已存在)
+- [x] T021 [P] 创建Project状态Store in frontend/src/stores/projectStore.ts (已存在)
+- [x] T022 [P] 创建Agent状态Store in frontend/src/stores/agentStore.ts (新创建)
 
 **完成标准**:
 - 所有数据模型通过TypeScript类型检查
@@ -153,25 +153,25 @@ US6 (P3) ─────────────────┘
 
 ### 3.1 后端 - NLP和需求解析
 
-- [ ] T023 [P] [US1] 实现NLPService（需求解析）in backend/src/services/NLPService.ts
-- [ ] T024 [P] [US1] 实现ValidationService（输入过滤）in backend/src/services/ValidationService.ts
-- [ ] T025 [P] [US1] 创建Project API路由 in backend/src/routes/projectRoutes.ts
-- [ ] T026 [US1] 实现POST /api/projects端点（创建项目 + 解析需求）
+- [x] T023 [P] [US1] 实现NLPService（需求解析）in backend/src/services/NLPService.ts
+- [x] T024 [P] [US1] 实现ValidationService（输入过滤）in backend/src/services/ValidationService.ts
+- [x] T025 [P] [US1] 创建Project API路由 in backend/src/routes/projectRoutes.ts
+- [x] T026 [US1] 实现POST /api/projects端点（创建项目 + 解析需求）
 
 ### 3.2 后端 - Agent任务分配
 
-- [ ] T027 [US1] 实现需求分解逻辑 in backend/src/services/AgentOrchestrator.ts:decomposeRequirement()
-- [ ] T028 [US1] 实现任务依赖图构建 in backend/src/services/AgentOrchestrator.ts:buildDependencyGraph()
-- [ ] T029 [US1] 实现任务调度启动 in backend/src/services/AgentOrchestrator.ts:scheduleTask()
-- [ ] T029.1 [US1] 实现VersionService in backend/src/services/VersionService.ts:createSnapshot()
-- [ ] T029.2 [US1] 在项目创建/修改时自动创建版本快照（集成到Project API）
+- [x] T027 [US1] 实现需求分解逻辑 in backend/src/services/AgentOrchestrator.ts:decomposeRequirement()
+- [x] T028 [US1] 实现任务依赖图构建 in backend/src/services/AgentOrchestrator.ts:buildDependencyGraph()
+- [x] T029 [US1] 实现任务调度启动 in backend/src/services/AgentOrchestrator.ts:scheduleTask()
+- [x] T029.1 [US1] 实现VersionService in backend/src/services/VersionService.ts:createSnapshot()
+- [x] T029.2 [US1] 在项目创建/修改时自动创建版本快照（集成到Project API）
 
 ### 3.3 前端 - 自然语言输入界面
 
-- [ ] T030 [P] [US1] 创建NaturalLanguageInput组件 in frontend/src/components/Builder/NaturalLanguageInput.tsx
-- [ ] T031 [P] [US1] 创建RequirementSummary组件 in frontend/src/components/Builder/RequirementSummary.tsx
-- [ ] T032 [P] [US1] 创建ChatInterface组件（对话式交互）in frontend/src/components/Chat/ChatInterface.tsx
-- [ ] T033 [US1] 集成组件到Builder页面 in frontend/src/pages/Builder.tsx
+- [x] T030 [P] [US1] 创建NaturalLanguageInput组件 in frontend/src/components/Builder/NaturalLanguageInput.tsx
+- [x] T031 [P] [US1] 创建RequirementSummary组件 in frontend/src/components/Builder/RequirementSummary.tsx
+- [x] T032 [P] [US1] 创建ChatInterface组件（对话式交互）in frontend/src/components/Chat/ChatInterface.tsx
+- [x] T033 [US1] 集成组件到Builder页面 in frontend/src/pages/Builder.tsx (创建了 Builder.v2.tsx)
 
 ### 3.4 集成和测试
 
@@ -198,24 +198,24 @@ US6 (P3) ─────────────────┘
 
 ### 4.1 后端 - Agent状态管理
 
-- [ ] T037 [P] [US2] 实现Agent状态发布 in backend/src/agents/BaseAgent.ts:publishStatus()
-- [ ] T038 [P] [US2] 实现Redis Pub/Sub订阅 in backend/src/websocket/handlers/agentHandler.ts
-- [ ] T039 [P] [US2] 实现WebSocket事件：agent:status:update
-- [ ] T040 [P] [US2] 实现WebSocket事件：agent:output
-- [ ] T041 [US2] 实现Agent错误处理和重试逻辑 in backend/src/services/AgentOrchestrator.ts:retryWithBackoff()
+- [x] T037 [P] [US2] 实现Agent状态发布 in backend/src/agents/BaseAgent.ts:publishStatus()
+- [x] T038 [P] [US2] 实现Redis Pub/Sub订阅 in backend/src/websocket/handlers/agentHandler.ts
+- [x] T039 [P] [US2] 实现WebSocket事件：agent:status:update
+- [x] T040 [P] [US2] 实现WebSocket事件：agent:output
+- [x] T041 [US2] 实现Agent错误处理和重试逻辑 in backend/src/services/AgentOrchestrator.ts:retryWithBackoff()
 
 ### 4.2 前端 - Agent监控界面
 
-- [ ] T042 [P] [US2] 创建AgentCard组件 in frontend/src/components/Builder/AgentCard.tsx
-- [ ] T043 [P] [US2] 创建AgentMonitor组件（5个Agent卡片容器）in frontend/src/components/Builder/AgentMonitor.tsx
-- [ ] T044 [P] [US2] 创建useAgent Hook in frontend/src/hooks/useAgent.ts
-- [ ] T045 [P] [US2] 实现Agent状态动画（空闲→工作中→完成）
-- [ ] T046 [US2] 集成到Builder页面并测试WebSocket实时更新
+- [x] T042 [P] [US2] 创建AgentCard组件 in frontend/src/components/Builder/AgentCard.tsx
+- [x] T043 [P] [US2] 创建AgentMonitor组件（5个Agent卡片容器）in frontend/src/components/Builder/AgentMonitor.tsx (创建了 AgentMonitorEnhanced.v2.tsx)
+- [x] T044 [P] [US2] 创建useAgent Hook in frontend/src/hooks/useAgent.ts
+- [x] T045 [P] [US2] 实现Agent状态动画（空闲→工作中→完成）(集成在 AgentCard 中)
+- [x] T046 [US2] 集成到Builder页面并测试WebSocket实时更新 (集成在 Builder.v2.tsx 中)
 
 ### 4.3 可视化增强
 
-- [ ] T047 [P] [US2] 实现Agent依赖关系图（使用ReactFlow或自定义SVG）in frontend/src/components/Builder/AgentDependencyGraph.tsx
-- [ ] T048 [US2] 实现进度条和任务队列展示
+- [x] T047 [P] [US2] 实现Agent依赖关系图（使用ReactFlow或自定义SVG）in frontend/src/components/Builder/AgentDependencyGraph.tsx
+- [x] T048 [US2] 实现进度条和任务队列展示 (集成在 AgentCard 和 AgentMonitorEnhanced 中)
 
 ### 4.4 集成和测试
 

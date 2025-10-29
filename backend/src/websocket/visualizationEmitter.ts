@@ -47,8 +47,9 @@ export class VisualizationEmitter {
 
   /**
    * 推送 Agent 状态更新
+   * T037-T039: Agent 状态更新事件
    */
-  emitAgentStatusUpdate(sessionId: string, update: AgentStatusUpdate): void {
+  emitAgentStatusUpdate(sessionId: string, update: AgentStatusUpdate | any): void {
     try {
       const event: VisualizationUpdateEvent = {
         type: 'agent_status_update',
@@ -57,11 +58,46 @@ export class VisualizationEmitter {
         timestamp: new Date().toISOString(),
       };
 
+      // 发送到 session 房间
       this.emitToSession(sessionId, 'visualization:agent-status-update', event);
+
+      // 同时发送到 project 房间（兼容性）
+      this.io!.to(`project:${sessionId}`).emit('agent:status:update', {
+        ...update,
+        timestamp: new Date().toISOString(),
+      });
 
       logger.debug(`Emitted agent status update for ${update.agentType} in session ${sessionId}`);
     } catch (error: any) {
       logger.error('Error emitting agent status update:', error);
+    }
+  }
+
+  /**
+   * T040: 推送 Agent 输出
+   */
+  emitAgentOutput(sessionId: string, output: {
+    agentType: string;
+    type: string;
+    content: any;
+    metadata?: any;
+    timestamp?: string;
+  }): void {
+    try {
+      const event = {
+        ...output,
+        timestamp: output.timestamp || new Date().toISOString(),
+      };
+
+      // 发送到 session 房间
+      this.emitToSession(sessionId, 'visualization:agent-output', event);
+
+      // 同时发送到 project 房间（兼容性）
+      this.io!.to(`project:${sessionId}`).emit('agent:output', event);
+
+      logger.debug(`Emitted agent output for ${output.agentType} in session ${sessionId}`);
+    } catch (error: any) {
+      logger.error('Error emitting agent output:', error);
     }
   }
 

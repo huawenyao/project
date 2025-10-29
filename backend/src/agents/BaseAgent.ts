@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 import { AIService } from '../services/AIService';
 import { logger } from '../utils/logger';
+import visualizationEmitter from '../websocket/visualizationEmitter';
 
 export interface AgentCapability {
   name: string;
@@ -24,6 +25,15 @@ export interface AgentExecutionResult {
   nextSteps?: string[];
   error?: string;
   metadata?: any;
+}
+
+export interface AgentStatus {
+  agentType: string;
+  status: 'idle' | 'working' | 'waiting' | 'completed' | 'failed';
+  currentTask?: string;
+  progress?: number;
+  message?: string;
+  output?: any;
 }
 
 export abstract class BaseAgent extends EventEmitter {
@@ -200,5 +210,65 @@ Always respond with actionable results that can be directly used in app developm
 
   protected logWarn(message: string, data?: any): void {
     logger.warn(`[${this.agentType.toUpperCase()}] ${message}`, data);
+  }
+
+  /**
+   * T037: 发布 Agent 状态到 WebSocket
+   * 实时推送状态更新到前端
+   */
+  protected publishStatus(
+    projectId: string,
+    status: AgentStatus['status'],
+    options: {
+      currentTask?: string;
+      progress?: number;
+      message?: string;
+      output?: any;
+    } = {}
+  ): void {
+    try {
+      const statusUpdate: AgentStatus = {
+        agentType: this.agentType,
+        status,
+        currentTask: options.currentTask,
+        progress: options.progress,
+        message: options.message,
+        output: options.output,
+      };
+
+      // 通过 WebSocket 发送状态更新
+      visualizationEmitter.emitAgentStatusUpdate(projectId, statusUpdate);
+
+      // 也触发 EventEmitter 事件（用于内部监听）
+      this.emit('status_update', statusUpdate);
+
+      this.logInfo('Status published', { status, progress: options.progress });
+    } catch (error) {
+      this.logError('Failed to publish status', error);
+    }
+  }
+
+  /**
+   * T037: 发布 Agent 输出到 WebSocket
+   */
+  protected publishOutput(
+    projectId: string,
+    output: {
+      type: string;
+      content: any;
+      metadata?: any;
+    }
+  ): void {
+    try {
+      visualizationEmitter.emitAgentOutput(projectId, {
+        agentType: this.agentType,
+        ...output,
+        timestamp: new Date().toISOString(),
+      });
+
+      this.logInfo('Output published', { type: output.type });
+    } catch (error) {
+      this.logError('Failed to publish output', error);
+    }
   }
 }

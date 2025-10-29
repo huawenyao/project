@@ -10,3 +10,4 @@ export { useAgentStatus } from './useAgentStatus';
 export { useDecisions } from './useDecisions';
 export { useReplay } from './useReplay';
 export { useTheme } from './useTheme';
+export { useAgent } from './useAgent';

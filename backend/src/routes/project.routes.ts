@@ -2,10 +2,14 @@ import { Router, Request, Response } from 'express';
 import { ProjectService } from '../services/ProjectService';
 import { authenticate } from '../middleware/auth';
 import { logger } from '../utils/logger';
+import nlpService from '../services/NLPService';
+import validationService from '../services/ValidationService';
+import versionService from '../services/VersionService';
 
 /**
  * T020 [P] [US1]: 项目路由
  * /api/projects - 项目管理相关API
+ * T025-T026: 支持 NLP 需求解析和验证
  */
 
 const router = Router();
@@ -15,7 +19,8 @@ router.use(authenticate);
 
 /**
  * POST /api/projects
- * 创建新项目
+ * 创建新项目（包含 NLP 需求解析）
+ * T026: 实现 POST /api/projects 端点
  */
 router.post('/', async (req: Request, res: Response): Promise<void> => {
   try {
@@ -40,16 +45,55 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // T025: 验证输入
+    const nameValidation = validationService.validateProjectName(name);
+    if (!nameValidation.isValid) {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid project name',
+        message: nameValidation.reason || '项目名称不合法',
+      });
+      return;
+    }
+
+    const textValidation = validationService.validateRequirementText(requirementText);
+    if (!textValidation.isValid) {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid requirement text',
+        message: textValidation.reason || '需求描述不合法',
+      });
+      return;
+    }
+
+    // T026: 使用 NLP 服务解析需求
+    const nlpResult = await nlpService.parseRequirement(requirementText);
+
     // 创建项目
     const project = await ProjectService.createProject({
       userId: req.user.userId,
-      name,
-      requirementText,
+      name: nameValidation.sanitized || name,
+      requirementText: textValidation.sanitized || requirementText,
     });
+
+    // T029.2: 创建初始版本快照
+    try {
+      await versionService.createSnapshot(
+        project.id,
+        req.user.userId,
+        '项目初始创建'
+      );
+    } catch (versionError) {
+      logger.warn('Failed to create initial version snapshot:', versionError);
+    }
 
     res.status(201).json({
       success: true,
-      data: { project },
+      data: {
+        project,
+        nlpAnalysis: nlpResult.success ? nlpResult.data : undefined,
+        clarifications: nlpResult.clarifications,
+      },
       message: '创建项目成功',
     });
   } catch (error: any) {
@@ -611,6 +655,207 @@ router.get('/stats/by-status', async (req: Request, res: Response): Promise<void
       success: false,
       error: error.message || 'Failed to get stats',
       message: '获取项目统计失败',
+    });
+  }
+});
+
+/**
+ * GET /api/projects/:id/versions
+ * 获取项目的版本列表
+ * T029.2: 版本管理 API
+ */
+router.get('/:id/versions', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    // 验证权限
+    const existingProject = await ProjectService.getProjectById(id);
+    if (!existingProject) {
+      res.status(404).json({
+        success: false,
+        error: 'Project not found',
+        message: '项目不存在',
+      });
+      return;
+    }
+
+    if (existingProject.userId !== req.user?.userId) {
+      res.status(403).json({
+        success: false,
+        error: 'Forbidden',
+        message: '无权访问此项目',
+      });
+      return;
+    }
+
+    const versions = await versionService.getVersions(id);
+
+    res.status(200).json({
+      success: true,
+      data: { versions },
+      message: '获取版本列表成功',
+    });
+  } catch (error: any) {
+    logger.error('Get versions error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to get versions',
+      message: '获取版本列表失败',
+    });
+  }
+});
+
+/**
+ * POST /api/projects/:id/versions
+ * 创建项目版本快照
+ * T029.2: 版本管理 API
+ */
+router.post('/:id/versions', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { description } = req.body;
+
+    // 验证权限
+    const existingProject = await ProjectService.getProjectById(id);
+    if (!existingProject) {
+      res.status(404).json({
+        success: false,
+        error: 'Project not found',
+        message: '项目不存在',
+      });
+      return;
+    }
+
+    if (existingProject.userId !== req.user?.userId) {
+      res.status(403).json({
+        success: false,
+        error: 'Forbidden',
+        message: '无权操作此项目',
+      });
+      return;
+    }
+
+    const version = await versionService.createSnapshot(
+      id,
+      req.user!.userId,
+      description
+    );
+
+    res.status(201).json({
+      success: true,
+      data: { version },
+      message: '创建版本快照成功',
+    });
+  } catch (error: any) {
+    logger.error('Create version error:', error);
+    res.status(400).json({
+      success: false,
+      error: error.message || 'Failed to create version',
+      message: error.message || '创建版本快照失败',
+    });
+  }
+});
+
+/**
+ * POST /api/projects/:id/versions/:versionId/restore
+ * 恢复到指定版本
+ * T029.2: 版本管理 API
+ */
+router.post('/:id/versions/:versionId/restore', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id, versionId } = req.params;
+
+    // 验证权限
+    const existingProject = await ProjectService.getProjectById(id);
+    if (!existingProject) {
+      res.status(404).json({
+        success: false,
+        error: 'Project not found',
+        message: '项目不存在',
+      });
+      return;
+    }
+
+    if (existingProject.userId !== req.user?.userId) {
+      res.status(403).json({
+        success: false,
+        error: 'Forbidden',
+        message: '无权操作此项目',
+      });
+      return;
+    }
+
+    await versionService.restoreVersion(id, versionId, req.user!.userId);
+
+    res.status(200).json({
+      success: true,
+      message: '恢复版本成功',
+    });
+  } catch (error: any) {
+    logger.error('Restore version error:', error);
+    res.status(400).json({
+      success: false,
+      error: error.message || 'Failed to restore version',
+      message: error.message || '恢复版本失败',
+    });
+  }
+});
+
+/**
+ * GET /api/projects/:id/versions/compare
+ * 对比两个版本
+ * T029.2: 版本管理 API
+ */
+router.get('/:id/versions/compare', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { versionId1, versionId2 } = req.query;
+
+    if (!versionId1 || !versionId2) {
+      res.status(400).json({
+        success: false,
+        error: 'Missing version IDs',
+        message: '缺少版本ID参数',
+      });
+      return;
+    }
+
+    // 验证权限
+    const existingProject = await ProjectService.getProjectById(id);
+    if (!existingProject) {
+      res.status(404).json({
+        success: false,
+        error: 'Project not found',
+        message: '项目不存在',
+      });
+      return;
+    }
+
+    if (existingProject.userId !== req.user?.userId) {
+      res.status(403).json({
+        success: false,
+        error: 'Forbidden',
+        message: '无权访问此项目',
+      });
+      return;
+    }
+
+    const diff = await versionService.compareVersions(
+      versionId1 as string,
+      versionId2 as string
+    );
+
+    res.status(200).json({
+      success: true,
+      data: { diff },
+      message: '版本对比成功',
+    });
+  } catch (error: any) {
+    logger.error('Compare versions error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to compare versions',
+      message: '版本对比失败',
     });
   }
 });

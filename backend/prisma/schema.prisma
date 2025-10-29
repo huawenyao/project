@@ -26,6 +26,7 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   projects      Project[]
+  versions      Version[]
 
   @@index([status])
   @@map("users")
@@ -199,15 +200,20 @@ model Deployment {
 
 // ===== Version Model =====
 model Version {
-  id            String   @id @default(uuid())
-  projectId     String
-  versionNumber String   @db.VarChar(50)
-  description   String?  @db.Text
-  changelog     String?  @db.Text
-  snapshot      Json
-  createdBy     String?  @db.VarChar(100)
-  createdAt     DateTime @default(now())
-  project       Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  id                  String   @id @default(uuid())
+  projectId           String
+  versionNumber       String   @db.VarChar(50)
+  description         String?  @db.Text
+  changelog           String?  @db.Text
+  snapshot            Json
+  createdBy           String?  @db.VarChar(100)
+  createdByUserId     String?
+  changedComponents   String[]
+  changedDataModels   String[]
+  changedApiEndpoints String[]
+  createdAt           DateTime @default(now())
+  project             Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdByUser       User?   @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
 
   @@unique([projectId, versionNumber])
   @@index([projectId])

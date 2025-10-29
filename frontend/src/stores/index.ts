@@ -12,6 +12,7 @@ export { useDecisionStore } from './decisionStore';
 // Core stores (001 branch - AI原生平台)
 export { useProjectStore } from './projectStore';
 export { useBuilderStore } from './builderStore';
+export { useAgentStore } from './agentStore';
 
 // Settings stores
 export { useThemeStore } from './themeStore';
