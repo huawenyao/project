@@ -12,12 +12,20 @@ import { rateLimiter } from './middleware/rateLimiter';
 import { logger } from './utils/logger';
 import { AgentOrchestrator } from './services/AgentOrchestrator';
 import { DatabaseService } from './services/DatabaseService';
+import { WebSocketService } from './services/WebSocketService';
 
-// Routes
+// New Routes (Sprint 0)
+import authRoutes from './routes/auth.routes';
+import userRoutes from './routes/user.routes';
+import projectRoutes from './routes/project.routes';
+import agentRoutesNew from './routes/agent.routes';
+import taskRoutes from './routes/task.routes';
+
+// Old Routes (Legacy)
 import agentRoutes from './routes/agentRoutes';
 import appRoutes from './routes/appRoutes';
-import authRoutes from './routes/authRoutes';
 import builderRoutes from './routes/builderRoutes';
+import visualizationRoutes from './routes/visualizationRoutes';
 
 dotenv.config();
 
@@ -56,43 +64,18 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API Routes
+// API Routes - New (Sprint 0)
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/agents-v2', agentRoutesNew);
+app.use('/api/tasks', taskRoutes);
+
+// API Routes - Legacy
 app.use('/api/agents', agentRoutes);
 app.use('/api/apps', appRoutes);
 app.use('/api/builder', builderRoutes);
-
-// WebSocket connection handling
-io.on('connection', (socket) => {
-  logger.info(`Client connected: ${socket.id}`);
-  
-  socket.on('join-project', (projectId: string) => {
-    socket.join(`project-${projectId}`);
-    logger.info(`Client ${socket.id} joined project ${projectId}`);
-  });
-
-  socket.on('agent-request', async (data) => {
-    try {
-      const orchestrator = AgentOrchestrator.getInstance();
-      const result = await orchestrator.processRequest(data);
-      
-      socket.emit('agent-response', {
-        requestId: data.requestId,
-        result
-      });
-    } catch (error) {
-      logger.error('Agent request error:', error);
-      socket.emit('agent-error', {
-        requestId: data.requestId,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
-  socket.on('disconnect', () => {
-    logger.info(`Client disconnected: ${socket.id}`);
-  });
-});
+app.use('/api/visualization', visualizationRoutes);
 
 // Error handling
 app.use(errorHandler);
@@ -108,9 +91,10 @@ app.use('*', (req, res) => {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down gracefully');
-  
+
   server.close(() => {
     logger.info('HTTP server closed');
+    WebSocketService.close();
     DatabaseService.getInstance().disconnect();
     process.exit(0);
   });
@@ -118,9 +102,10 @@ process.on('SIGTERM', async () => {
 
 process.on('SIGINT', async () => {
   logger.info('SIGINT received, shutting down gracefully');
-  
+
   server.close(() => {
     logger.info('HTTP server closed');
+    WebSocketService.close();
     DatabaseService.getInstance().disconnect();
     process.exit(0);
   });
@@ -131,14 +116,26 @@ async function startServer() {
   try {
     // Initialize database
     await DatabaseService.getInstance().connect();
-    
+    logger.info('✅ Database connected');
+
+    // Initialize WebSocket service
+    WebSocketService.initialize(server);
+    logger.info('✅ WebSocket service initialized');
+
     // Initialize agent orchestrator
     AgentOrchestrator.getInstance();
-    
+    logger.info('✅ Agent orchestrator initialized');
+
     server.listen(Number(PORT), '0.0.0.0', () => {
       logger.info(`🚀 AI Agent App Builder Backend running on port ${PORT}`);
       logger.info(`📊 Health check available at http://localhost:${PORT}/health`);
       logger.info(`🔌 WebSocket server ready for connections`);
+      logger.info(`📁 API endpoints:`);
+      logger.info(`   - /api/auth - 认证服务`);
+      logger.info(`   - /api/users - 用户管理`);
+      logger.info(`   - /api/projects - 项目管理`);
+      logger.info(`   - /api/agents-v2 - Agent管理`);
+      logger.info(`   - /api/tasks - 任务管理`);
     });
   } catch (error) {
     logger.error('Failed to start server:', error);
