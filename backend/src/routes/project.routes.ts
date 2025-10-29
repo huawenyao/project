@@ -5,6 +5,7 @@ import { logger } from '../utils/logger';
 import nlpService from '../services/NLPService';
 import validationService from '../services/ValidationService';
 import versionService from '../services/VersionService';
+import dataModelService from '../services/DataModelService';
 
 /**
  * T020 [P] [US1]: 项目路由
@@ -856,6 +857,306 @@ router.get('/:id/versions/compare', async (req: Request, res: Response): Promise
       success: false,
       error: error.message || 'Failed to compare versions',
       message: '版本对比失败',
+    });
+  }
+});
+
+/**
+ * GET /api/projects/:id/data-models
+ * 获取项目的数据模型
+ * T070: Phase 6 - 智能数据模型推荐
+ */
+router.get('/:id/data-models', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    // 验证权限
+    const existingProject = await ProjectService.getProjectById(id);
+    if (!existingProject) {
+      res.status(404).json({
+        success: false,
+        error: 'Project not found',
+        message: '项目不存在',
+      });
+      return;
+    }
+
+    if (existingProject.userId !== req.user?.userId) {
+      res.status(403).json({
+        success: false,
+        error: 'Forbidden',
+        message: '无权访问此项目',
+      });
+      return;
+    }
+
+    const result = await dataModelService.getDataModels(id);
+
+    if (!result.success) {
+      res.status(400).json({
+        success: false,
+        error: result.error,
+        message: '获取数据模型失败',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: { models: result.data },
+      message: '获取数据模型成功',
+    });
+  } catch (error: any) {
+    logger.error('Get data models error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to get data models',
+      message: '获取数据模型失败',
+    });
+  }
+});
+
+/**
+ * POST /api/projects/:id/data-models/recommend
+ * 推荐数据模型
+ * T067-T068: Phase 6 - 智能数据模型推荐
+ */
+router.post('/:id/data-models/recommend', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    // 验证权限
+    const existingProject = await ProjectService.getProjectById(id);
+    if (!existingProject) {
+      res.status(404).json({
+        success: false,
+        error: 'Project not found',
+        message: '项目不存在',
+      });
+      return;
+    }
+
+    if (existingProject.userId !== req.user?.userId) {
+      res.status(403).json({
+        success: false,
+        error: 'Forbidden',
+        message: '无权操作此项目',
+      });
+      return;
+    }
+
+    const result = await dataModelService.recommendDataModels(id);
+
+    if (!result.success) {
+      res.status(400).json({
+        success: false,
+        error: result.error,
+        message: '推荐数据模型失败',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: { recommendations: result.data },
+      message: '推荐数据模型成功',
+    });
+  } catch (error: any) {
+    logger.error('Recommend data models error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to recommend data models',
+      message: '推荐数据模型失败',
+    });
+  }
+});
+
+/**
+ * POST /api/projects/:id/data-models/analyze-impact
+ * 分析数据模型变更的影响
+ * T069: Phase 6 - 影响分析
+ */
+router.post('/:id/data-models/analyze-impact', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { changes } = req.body;
+
+    if (!changes || !Array.isArray(changes)) {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid changes',
+        message: '缺少或无效的changes参数',
+      });
+      return;
+    }
+
+    // 验证权限
+    const existingProject = await ProjectService.getProjectById(id);
+    if (!existingProject) {
+      res.status(404).json({
+        success: false,
+        error: 'Project not found',
+        message: '项目不存在',
+      });
+      return;
+    }
+
+    if (existingProject.userId !== req.user?.userId) {
+      res.status(403).json({
+        success: false,
+        error: 'Forbidden',
+        message: '无权操作此项目',
+      });
+      return;
+    }
+
+    const result = await dataModelService.analyzeImpact(id, changes);
+
+    if (!result.success) {
+      res.status(400).json({
+        success: false,
+        error: result.error,
+        message: '影响分析失败',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: { analysis: result.data },
+      message: '影响分析成功',
+    });
+  } catch (error: any) {
+    logger.error('Analyze impact error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to analyze impact',
+      message: '影响分析失败',
+    });
+  }
+});
+
+/**
+ * POST /api/projects/:id/deploy
+ * 部署项目
+ * T081: Phase 7 - 一键部署
+ */
+router.post('/:id/deploy', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { config } = req.body;
+
+    if (!config || !config.environment) {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid config',
+        message: '缺少或无效的config参数',
+      });
+      return;
+    }
+
+    // 验证权限
+    const existingProject = await ProjectService.getProjectById(id);
+    if (!existingProject) {
+      res.status(404).json({
+        success: false,
+        error: 'Project not found',
+        message: '项目不存在',
+      });
+      return;
+    }
+
+    if (existingProject.userId !== req.user?.userId) {
+      res.status(403).json({
+        success: false,
+        error: 'Forbidden',
+        message: '无权操作此项目',
+      });
+      return;
+    }
+
+    // 导入部署服务
+    const DeploymentService = (await import('../services/DeploymentService')).default;
+
+    const result = await DeploymentService.deploy({
+      projectId: id,
+      config,
+    });
+
+    if (!result.success) {
+      res.status(400).json({
+        success: false,
+        error: result.error,
+        message: '部署失败',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: { deploymentId: result.deploymentId },
+      message: '部署已启动',
+    });
+  } catch (error: any) {
+    logger.error('Deploy project error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to deploy project',
+      message: '部署项目失败',
+    });
+  }
+});
+
+/**
+ * GET /api/projects/:id/deployments
+ * 获取项目的部署历史
+ * T081: Phase 7 - 一键部署
+ */
+router.get('/:id/deployments', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    // 验证权限
+    const existingProject = await ProjectService.getProjectById(id);
+    if (!existingProject) {
+      res.status(404).json({
+        success: false,
+        error: 'Project not found',
+        message: '项目不存在',
+      });
+      return;
+    }
+
+    if (existingProject.userId !== req.user?.userId) {
+      res.status(403).json({
+        success: false,
+        error: 'Forbidden',
+        message: '无权访问此项目',
+      });
+      return;
+    }
+
+    // 从数据库获取部署历史
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+
+    const deployments = await prisma.deployment.findMany({
+      where: { projectId: id },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: { deployments },
+      message: '获取部署历史成功',
+    });
+  } catch (error: any) {
+    logger.error('Get deployments error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to get deployments',
+      message: '获取部署历史失败',
     });
   }
 });

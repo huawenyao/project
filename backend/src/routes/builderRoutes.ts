@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
 import { userRateLimit } from '../middleware/rateLimiter';
+import codeGenerationService from '../services/CodeGenerationService';
+import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
@@ -598,6 +600,72 @@ router.post('/preview', asyncHandler(async (req, res) => {
     success: true,
     data: preview
   });
+}));
+
+/**
+ * T060: 解析自然语言修改命令
+ */
+router.post('/parse-command', authenticate, asyncHandler(async (req, res) => {
+  const { projectId, command, currentComponents } = req.body;
+
+  if (!command || !currentComponents) {
+    return res.status(400).json({
+      success: false,
+      error: 'Missing required fields',
+      message: '缺少必填字段：command, currentComponents',
+    });
+  }
+
+  const result = await codeGenerationService.parseModificationCommand(
+    command,
+    currentComponents
+  );
+
+  res.json(result);
+}));
+
+/**
+ * T061: 生成AI设计建议
+ */
+router.post('/design-suggestions', authenticate, asyncHandler(async (req, res) => {
+  const { projectId, components, context } = req.body;
+
+  if (!components || !Array.isArray(components)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid components',
+      message: 'components必须是数组',
+    });
+  }
+
+  const result = await codeGenerationService.generateDesignSuggestions(
+    components,
+    context
+  );
+
+  res.json(result);
+}));
+
+/**
+ * T062: 生成智能警告
+ */
+router.post('/smart-warnings', authenticate, asyncHandler(async (req, res) => {
+  const { projectId, components, recentChanges } = req.body;
+
+  if (!components || !Array.isArray(components)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid components',
+      message: 'components必须是数组',
+    });
+  }
+
+  const result = await codeGenerationService.generateSmartWarnings(
+    components,
+    recentChanges
+  );
+
+  res.json(result);
 }));
 
 export default router;

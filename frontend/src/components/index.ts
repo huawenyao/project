@@ -24,5 +24,7 @@ export { default as TaskQueueViewer } from './Visualization/TaskQueueViewer';
 
 // === Phase 2 Week 6-8: Data & Deployment ===
 export { default as DataModelViewer } from './DataModel/DataModelViewer';
+export { default as DataModelPanel } from './DataModel/DataModelPanel';
 export { default as VersionHistory } from './Version/VersionHistory';
 export { default as DeploymentProgress } from './Deployment/DeploymentProgress';
+export { default as DeploymentPanel } from './Deployment/DeploymentPanel';

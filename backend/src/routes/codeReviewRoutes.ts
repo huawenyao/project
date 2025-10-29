@@ -121,4 +121,63 @@ router.post('/documentation', auth, async (req, res) => {
   }
 });
 
+/**
+ * GET /api/code-review/project/:id/export
+ * 导出项目代码
+ */
+router.get('/project/:id/export', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const CodeGenerationService = (await import('../services/CodeGenerationService')).default;
+
+    const result = await CodeGenerationService.exportProjectCode(id);
+
+    res.json(result);
+  } catch (error: any) {
+    logger.error('[Code Review Routes] Error exporting project:', error);
+    res.status(500).json({
+      success: false,
+      error: '代码导出失败',
+    });
+  }
+});
+
+/**
+ * GET /api/code-review/project/:id/suggestions
+ * 获取代码优化建议 (T090)
+ */
+router.get('/project/:id/suggestions', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await CodeReviewService.reviewProject(id);
+
+    if (result.success && result.data) {
+      // 提取所有优化建议
+      const allSuggestions = result.data.files.flatMap((file) =>
+        file.review.suggestions.map((suggestion) => ({
+          ...suggestion,
+          file: file.file,
+        }))
+      );
+
+      res.json({
+        success: true,
+        data: {
+          suggestions: allSuggestions,
+          summary: result.data.summary,
+        },
+      });
+    } else {
+      res.json(result);
+    }
+  } catch (error: any) {
+    logger.error('[Code Review Routes] Error getting suggestions:', error);
+    res.status(500).json({
+      success: false,
+      error: '获取优化建议失败',
+    });
+  }
+});
+
 export default router;

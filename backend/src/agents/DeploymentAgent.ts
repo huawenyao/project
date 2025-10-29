@@ -99,6 +99,58 @@ export class DeploymentAgent extends BaseAgent {
     }
   }
 
+  /**
+   * T078-T080: 扩展部署方法支持实际的 Docker 构建和健康检查
+   */
+  public async deploy(
+    projectId: string,
+    config: any,
+    context: AgentExecutionContext
+  ): Promise<AgentExecutionResult> {
+    this.startExecution();
+
+    try {
+      this.logInfo('Starting deployment', { projectId, config });
+
+      // 调用部署服务
+      const DeploymentService = require('../services/DeploymentService').default;
+
+      const result = await DeploymentService.deploy({
+        projectId,
+        config,
+      });
+
+      if (!result.success) {
+        throw new Error(result.error || 'Deployment failed');
+      }
+
+      return {
+        success: true,
+        data: {
+          deploymentId: result.deploymentId,
+        },
+        nextSteps: [
+          'Monitor deployment progress',
+          'Wait for health checks',
+          'Verify application is running',
+        ],
+        metadata: {
+          projectId,
+          environment: config.environment,
+          deploymentId: result.deploymentId,
+        },
+      };
+    } catch (error) {
+      this.logError('Deployment failed:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    } finally {
+      this.endExecution();
+    }
+  }
+
   private async deployApplication(
     parameters: any,
     context: AgentExecutionContext

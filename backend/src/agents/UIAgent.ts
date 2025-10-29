@@ -480,4 +480,101 @@ Ensure consistency, accessibility (WCAG compliance), and modern design principle
       };
     }
   }
+
+  /**
+   * T054: 生成组件（从自然语言描述）
+   */
+  public async generateComponents(
+    description: string,
+    context: AgentExecutionContext
+  ): Promise<AgentExecutionResult> {
+    this.startExecution();
+
+    try {
+      this.logInfo('Generating components from description', { description });
+
+      const prompt = `根据以下描述生成UI组件：
+
+${description}
+
+要求：
+1. 分析描述，识别所需的UI组件
+2. 为每个组件生成完整定义（类型、属性、样式、数据绑定、事件）
+3. 确保组件间的布局和关系合理
+4. 返回JSON格式
+
+返回格式：
+{
+  "components": [
+    {
+      "type": "组件类型 (Button, Input, Card, Table等)",
+      "name": "组件名称",
+      "props": { 组件属性 },
+      "styles": {
+        "position": { "x": 数值, "y": 数值 },
+        "size": { "width": 数值, "height": 数值 }
+      },
+      "dataBinding": { 数据绑定配置 },
+      "events": [ 事件配置 ]
+    }
+  ],
+  "layout": {
+    "type": "布局类型",
+    "description": "布局说明"
+  }
+}`;
+
+      const response = await this.generateWithAI(prompt, undefined, {
+        temperature: 0.5,
+        maxTokens: 3000
+      });
+
+      // 解析响应
+      let componentsData;
+      try {
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          componentsData = JSON.parse(jsonMatch[0]);
+        } else {
+          componentsData = JSON.parse(response);
+        }
+      } catch (e) {
+        this.logWarn('Failed to parse JSON response, using fallback');
+        componentsData = {
+          components: [],
+          layout: { type: 'flex', description: 'Default flex layout' }
+        };
+      }
+
+      const artifacts = [
+        this.createArtifact('components', 'generated_components', componentsData.components),
+        this.createArtifact('layout', 'layout_config', componentsData.layout)
+      ];
+
+      return {
+        success: true,
+        data: componentsData,
+        artifacts,
+        nextSteps: [
+          '审查生成的组件',
+          '调整组件属性和样式',
+          '测试组件交互',
+          '保存到项目'
+        ],
+        metadata: {
+          componentCount: componentsData.components?.length || 0,
+          layoutType: componentsData.layout?.type
+        }
+      };
+
+    } catch (error) {
+      this.logError('Failed to generate components:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    } finally {
+      this.endExecution();
+    }
+  }
 }

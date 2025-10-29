@@ -20,12 +20,14 @@ import userRoutes from './routes/user.routes';
 import projectRoutes from './routes/project.routes';
 import agentRoutesNew from './routes/agent.routes';
 import taskRoutes from './routes/task.routes';
+import componentRoutes from './routes/componentRoutes';
 
 // Old Routes (Legacy) - 临时禁用：依赖有编译错误的 AgentOrchestrator
 // import agentRoutes from './routes/agentRoutes';
 import appRoutes from './routes/appRoutes';
 import builderRoutes from './routes/builderRoutes';
 import visualizationRoutes from './routes/visualizationRoutes';
+import codeReviewRoutes from './routes/codeReviewRoutes';
 
 dotenv.config();
 
@@ -68,6 +70,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/projects', componentRoutes); // Component routes (mounted on /api/projects/:id/components)
 app.use('/api/agents-v2', agentRoutesNew);
 app.use('/api/tasks', taskRoutes);
 
@@ -76,6 +79,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/apps', appRoutes);
 app.use('/api/builder', builderRoutes);
 app.use('/api/visualization', visualizationRoutes);
+app.use('/api/code-review', codeReviewRoutes);
 
 // Error handling
 app.use(errorHandler);

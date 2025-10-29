@@ -1,12 +1,15 @@
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import { logger } from '../utils/logger';
+import CacheService from './CacheService';
 
 export interface AIOptions {
   temperature?: number;
   maxTokens?: number;
   model?: string;
   systemPrompt?: string;
+  useCache?: boolean; // 是否使用缓存，默认 true
+  cacheTTL?: number; // 缓存过期时间（秒），默认 3600
 }
 
 export interface AIResponse {
@@ -72,7 +75,7 @@ export class AIService {
   }
 
   /**
-   * 生成AI响应，带自动fallback机制
+   * 生成AI响应，带自动fallback机制和缓存 (T098)
    */
   public async generateResponse(
     prompt: string,
@@ -82,15 +85,41 @@ export class AIService {
       temperature = 0.7,
       maxTokens = 1500,
       model = this.defaultModel,
-      systemPrompt
+      systemPrompt,
+      useCache = true,
+      cacheTTL = 3600,
     } = options;
+
+    // 尝试从缓存获取
+    if (useCache) {
+      const cacheParams = {
+        provider: this.defaultProvider,
+        model,
+        prompt,
+        systemPrompt,
+        temperature,
+      };
+
+      try {
+        const cached = await CacheService.getAIResponse(cacheParams);
+        if (cached) {
+          logger.info('[AIService] Using cached AI response');
+          return cached;
+        }
+      } catch (cacheError: any) {
+        logger.warn('[AIService] Cache read error:', cacheError.message);
+        // 缓存错误不影响主流程，继续执行
+      }
+    }
 
     // 尝试使用主提供者
     const primaryProvider = this.defaultProvider;
     const fallbackProvider = this.getFallbackProvider(primaryProvider);
 
+    let response: string;
+
     try {
-      return await this.generateWithProvider(primaryProvider, prompt, {
+      response = await this.generateWithProvider(primaryProvider, prompt, {
         temperature,
         maxTokens,
         model,
@@ -104,7 +133,7 @@ export class AIService {
       if (this.enableFallback && fallbackProvider) {
         try {
           logger.info(`Falling back to ${fallbackProvider}`);
-          return await this.generateWithProvider(fallbackProvider, prompt, {
+          response = await this.generateWithProvider(fallbackProvider, prompt, {
             temperature,
             maxTokens,
             model: this.getProviderModel(fallbackProvider, model),
@@ -115,10 +144,30 @@ export class AIService {
           logger.error('Both primary and fallback providers failed');
           throw new Error(`All AI providers failed. Primary: ${primaryError instanceof Error ? primaryError.message : 'Unknown'}, Fallback: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown'}`);
         }
+      } else {
+        throw new Error(`AI service error: ${primaryError instanceof Error ? primaryError.message : 'Unknown error'}`);
       }
-
-      throw new Error(`AI service error: ${primaryError instanceof Error ? primaryError.message : 'Unknown error'}`);
     }
+
+    // 缓存响应
+    if (useCache && response) {
+      const cacheParams = {
+        provider: this.defaultProvider,
+        model,
+        prompt,
+        systemPrompt,
+        temperature,
+      };
+
+      try {
+        await CacheService.setAIResponse(cacheParams, response, cacheTTL);
+      } catch (cacheError: any) {
+        logger.warn('[AIService] Cache write error:', cacheError.message);
+        // 缓存错误不影响主流程
+      }
+    }
+
+    return response;
   }
 
   /**
