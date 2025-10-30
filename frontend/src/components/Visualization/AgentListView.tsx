@@ -18,7 +18,7 @@ export interface AgentListViewProps {
 
 export const AgentListView: React.FC<AgentListViewProps> = ({
   session,
-  statuses,
+  statuses = [],
   personas = [],
   className = '',
 }) => {

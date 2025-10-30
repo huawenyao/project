@@ -211,7 +211,7 @@ const TaskCard: React.FC<{ task: Task }> = ({ task }) => {
  * 任务队列查看器主组件
  */
 export const TaskQueueViewer: React.FC<TaskQueueViewerProps> = ({
-  tasks,
+  tasks = [],
   className = '',
 }) => {
   const [filterStatus, setFilterStatus] = useState<string>('all');

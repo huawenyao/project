@@ -18,8 +18,8 @@ export interface ProgressSummaryProps {
 
 export const ProgressSummary: React.FC<ProgressSummaryProps> = ({
   session,
-  statuses,
-  overallProgress,
+  statuses = [],
+  overallProgress = 0,
   className = '',
 }) => {
   // 计算统计信息
@@ -43,7 +43,7 @@ export const ProgressSummary: React.FC<ProgressSummaryProps> = ({
 
   // 计算总耗时
   const getTotalDuration = () => {
-    if (!session.startTime) return null;
+    if (!session || !session.startTime) return '0秒';
     const start = new Date(session.startTime).getTime();
     const end = session.endTime ? new Date(session.endTime).getTime() : Date.now();
     const duration = Math.floor((end - start) / 1000);
@@ -57,6 +57,7 @@ export const ProgressSummary: React.FC<ProgressSummaryProps> = ({
 
   // 获取状态文本
   const getStatusText = () => {
+    if (!session) return '准备中';
     if (session.status === 'success') return '构建成功';
     if (session.status === 'failed') return '构建失败';
     if (session.status === 'partial_success') return '部分成功';
@@ -66,6 +67,7 @@ export const ProgressSummary: React.FC<ProgressSummaryProps> = ({
 
   // 获取状态颜色
   const getStatusColor = () => {
+    if (!session) return 'text-text-tertiary';
     if (session.status === 'success') return 'text-success';
     if (session.status === 'failed') return 'text-error';
     if (session.status === 'partial_success') return 'text-warning';
@@ -91,8 +93,8 @@ export const ProgressSummary: React.FC<ProgressSummaryProps> = ({
         </div>
         <ProgressBar
           progress={overallProgress}
-          status={session.status === 'in_progress' ? 'in_progress' : session.status === 'failed' ? 'failed' : 'completed'}
-          showGlow={session.status === 'in_progress'}
+          status={session?.status === 'in_progress' ? 'in_progress' : session?.status === 'failed' ? 'failed' : 'completed'}
+          showGlow={session?.status === 'in_progress'}
           height="h-3"
         />
       </div>
@@ -156,7 +158,7 @@ export const ProgressSummary: React.FC<ProgressSummaryProps> = ({
           </div>
 
           {/* Agent List */}
-          {session.agentList && session.agentList.length > 0 && (
+          {session?.agentList && session.agentList.length > 0 && (
             <div className="flex items-center">
               <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -167,7 +169,7 @@ export const ProgressSummary: React.FC<ProgressSummaryProps> = ({
         </div>
 
         {/* Success Rate */}
-        {stats.total > 0 && session.status !== 'in_progress' && (
+        {stats.total > 0 && session?.status !== 'in_progress' && (
           <div className="text-text-secondary">
             <span>成功率: </span>
             <span className={`font-semibold ${stats.failed === 0 ? 'text-success' : stats.failed > stats.completed ? 'text-error' : 'text-warning'}`}>

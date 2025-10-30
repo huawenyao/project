@@ -29,11 +29,16 @@ export const AgentStatusCard: React.FC<AgentStatusCardProps> = ({
 
   // T098: 状态变化时触发动画
   useEffect(() => {
-    if (status.status === 'completed') {
+    if (status?.status === 'completed') {
       setAnimationClass('agent-completed success-flash');
       setTimeout(() => setAnimationClass(''), 1000);
     }
-  }, [status.status]);
+  }, [status?.status]);
+
+  // 早期返回：如果没有 status 数据，不渲染
+  if (!status) {
+    return null;
+  }
 
   // 辅助函数：判断是否使用友好语气
   const isFriendlyTone = (tone?: string): boolean => {

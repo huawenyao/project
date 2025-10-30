@@ -23,6 +23,11 @@ export const DecisionCard: React.FC<DecisionCardProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
+  // 早期返回：如果没有 decision 数据，不渲染
+  if (!decision) {
+    return null;
+  }
+
   const getImportanceBadge = () => {
     const badges = {
       critical: { label: '关键', color: 'bg-error text-text-on-primary' },

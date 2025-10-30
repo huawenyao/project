@@ -13,7 +13,7 @@ export interface DecisionTimelineProps {
 }
 
 export const DecisionTimeline: React.FC<DecisionTimelineProps> = ({
-  decisions,
+  decisions = [],
   onDecisionClick,
 }) => {
   const getImportanceBadge = (importance: string) => {
