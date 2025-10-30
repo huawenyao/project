@@ -10,6 +10,16 @@ A revolutionary platform that transforms traditional no-code app building into a
 - **Smart Configuration**: Automatic setup of databases, APIs, and integrations
 - **Contextual Suggestions**: Real-time recommendations based on app requirements
 
+### 🎯 AI Thinking Visualization System (NEW!)
+Experience transparent AI collaboration with our revolutionary visualization system:
+- **Real-time Agent Status**: Watch each AI agent work with live progress updates and status indicators
+- **Decision Transparency**: See why AI makes each decision with detailed reasoning cards
+- **Personified Agents**: Agents with unique personalities, avatars, and friendly status messages
+- **Impact Previews**: Preview how decisions affect your application before they're applied
+- **Collaboration Flow**: Visualize how agents work together and pass data between tasks
+- **Historical Replay**: Review past build sessions with full playback capabilities
+- **Dual Themes**: Choose between warm-friendly or tech-futuristic visual styles
+
 ### Agent-Based Architecture
 - **Specialized Agents**: Different agents for UI, backend, database, and deployment
 - **Collaborative Workflow**: Agents work together to build complete applications
@@ -102,9 +112,37 @@ A revolutionary platform that transforms traditional no-code app building into a
    ```
 
 4. **Access the Platform**
-   - Builder Interface: http://localhost:3000
-   - API Documentation: http://localhost:3001/docs
-   - Agent Dashboard: http://localhost:3000/agents
+   - Builder Interface: http://localhost:12000
+   - API Server: http://localhost:3001
+   - Visualization Dashboard: http://localhost:12000/visualization
+
+## 🧪 Testing & Quality Assurance
+
+The project includes comprehensive test suites to ensure reliability and performance:
+
+### Performance Testing
+```bash
+# WebSocket Load Test (1000+ concurrent connections)
+npx ts-node backend/src/scripts/test-websocket-load.ts
+
+# Performance Benchmarks (latency & query speed)
+npx ts-node backend/src/scripts/test-performance.ts
+```
+
+### Security Audit
+```bash
+# Comprehensive security checks
+npx ts-node backend/src/scripts/test-security-audit.ts
+```
+
+### Code Quality
+```bash
+# Frontend linting & type checking
+cd frontend && npm run lint && npm run type-check
+
+# Backend linting & type checking
+cd backend && npm run lint && npx tsc --noEmit
+```
 
 ## 🎯 Use Cases
 

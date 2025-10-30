@@ -53,6 +53,10 @@ export interface AgentWorkStatus {
   retryCount: number;
   maxRetry: number;
   lastError?: string;
+  currentOperation?: string;
+  estimatedTimeRemaining?: number;
+  errorMessage?: string;
+  resultSummary?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -87,13 +91,18 @@ export interface DecisionRecord {
   agentType: AgentType;
   decisionType: DecisionType;
   decisionTitle: string;
+  decisionContent?: string;
   reasoning: DecisionReasoning;
+  alternatives?: any;
+  tradeoffs?: string;
+  importance?: string;
   impact: DecisionImpact;
   affectedComponents: string[];
   timestamp: string;
   createdAt: string;
   updatedAt: string;
   read?: boolean; // 前端添加的字段
+  isRead?: boolean; // 兼容后端字段名
 }
 
 // ==================== Agent Error Record ====================

@@ -69,7 +69,7 @@ export const DecisionCard: React.FC<DecisionCardProps> = ({
           </svg>
           决策理由
         </h4>
-        <p className="text-sm text-text-secondary">{decision.reasoning}</p>
+        <p className="text-sm text-text-secondary">{decision.reasoning?.reasoning || decision.reasoning as any as string}</p>
       </div>
 
       {/* Alternatives (Expandable) */}

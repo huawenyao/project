@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useSocket } from '../../contexts/SocketContext'
 import { clsx } from 'clsx'
+import ConnectionIndicator from '../ConnectionIndicator'
 
 export default function Header() {
   const { user, logout } = useAuth()
@@ -44,16 +45,8 @@ export default function Header() {
 
           {/* Right side */}
           <div className="ml-4 flex items-center space-x-4">
-            {/* Connection status */}
-            <div className="flex items-center">
-              <div className={clsx(
-                'w-2 h-2 rounded-full mr-2',
-                connected ? 'bg-green-500' : 'bg-red-500'
-              )} />
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                {connected ? 'Connected' : 'Disconnected'}
-              </span>
-            </div>
+            {/* Phase 13: Enhanced Connection Status Indicator */}
+            <ConnectionIndicator />
 
             {/* Theme selector */}
             <Menu as="div" className="relative">

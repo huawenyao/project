@@ -1,144 +1,174 @@
-import React from 'react'
-import { Wrench, Zap, Code, Palette, Database, Cloud } from 'lucide-react'
+/**
+ * Builder 页面 - AI 驱动的应用构建器
+ * 三列布局：左侧需求输入 | 中央 Agent 工作区 | 右侧决策时间线
+ */
+
+import React, { useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import BuilderSidebar, { type BuildRequirements } from '../components/Builder/BuilderSidebar';
+import BuilderWorkspace from '../components/Builder/BuilderWorkspace';
+import DecisionSidebarPanel from '../components/Builder/DecisionSidebarPanel';
+import CollaborationPanel from '../components/Builder/CollaborationPanel';
+import { useBuilderStore } from '../stores/builderStore';
+import { useBuilderWebSocket } from '../hooks/useBuilderWebSocket.tsx';
 
 export default function Builder() {
+  const { sessionId: urlSessionId } = useParams<{ sessionId?: string }>();
+  const { currentSessionId, setSessionId, setSessionStatus, reset } = useBuilderStore();
+
+  // 使用 URL 中的 sessionId 或当前会话 ID
+  const activeSessionId = urlSessionId || currentSessionId;
+
+  // 初始化 WebSocket 连接
+  useBuilderWebSocket(activeSessionId, {
+    onAgentStatusUpdate: (status) => {
+      console.log('[Builder] Agent status updated:', status);
+    },
+    onDecisionCreated: (decision) => {
+      console.log('[Builder] Decision created:', decision);
+    },
+    onError: (error) => {
+      console.error('[Builder] Agent error:', error);
+    },
+    onSessionComplete: () => {
+      console.log('[Builder] Build session completed!');
+    },
+  });
+
+  // 组件挂载时设置 sessionId
+  useEffect(() => {
+    if (urlSessionId && urlSessionId !== currentSessionId) {
+      setSessionId(urlSessionId);
+      // TODO: 加载会话数据
+    }
+  }, [urlSessionId, currentSessionId, setSessionId]);
+
+  // 组件卸载时清理
+  useEffect(() => {
+    return () => {
+      // 如果没有活动会话，清理 store
+      if (!activeSessionId) {
+        reset();
+      }
+    };
+  }, [activeSessionId, reset]);
+
+  // 处理开始构建
+  const handleStartBuild = async (requirements: BuildRequirements) => {
+    try {
+      console.log('[Builder] Starting build with requirements:', requirements);
+
+      // TODO: 调用后端 API 创建构建会话
+      // const response = await fetch('/api/builder/sessions', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(requirements),
+      // });
+      // const { sessionId } = await response.json();
+
+      // 临时：生成模拟 sessionId
+      const mockSessionId = `session-${Date.now()}`;
+      setSessionId(mockSessionId);
+      setSessionStatus('building');
+
+      // TODO: 移除模拟数据，使用真实 WebSocket 数据
+      // 模拟添加 5 个 Agents
+      const mockAgents = [
+        {
+          statusId: 'status-1',
+          sessionId: mockSessionId,
+          agentId: 'agent-ui',
+          agentType: 'ui' as const,
+          status: 'in_progress' as const,
+          progressPercentage: 30,
+          taskDescription: '正在设计 UI 组件...',
+          personalityTone: 'friendly' as const,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        {
+          statusId: 'status-2',
+          sessionId: mockSessionId,
+          agentId: 'agent-backend',
+          agentType: 'backend' as const,
+          status: 'pending' as const,
+          progressPercentage: 0,
+          taskDescription: '等待 UI Agent 完成...',
+          personalityTone: 'professional' as const,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        {
+          statusId: 'status-3',
+          sessionId: mockSessionId,
+          agentId: 'agent-database',
+          agentType: 'database' as const,
+          status: 'pending' as const,
+          progressPercentage: 0,
+          taskDescription: '等待后端 Agent 定义数据需求...',
+          personalityTone: 'technical' as const,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        {
+          statusId: 'status-4',
+          sessionId: mockSessionId,
+          agentId: 'agent-integration',
+          agentType: 'integration' as const,
+          status: 'pending' as const,
+          progressPercentage: 0,
+          taskDescription: '准备集成第三方服务...',
+          personalityTone: 'friendly' as const,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        {
+          statusId: 'status-5',
+          sessionId: mockSessionId,
+          agentId: 'agent-deployment',
+          agentType: 'deployment' as const,
+          status: 'pending' as const,
+          progressPercentage: 0,
+          taskDescription: '等待应用完成构建...',
+          personalityTone: 'professional' as const,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ];
+
+      useBuilderStore.getState().setAgents(mockAgents);
+    } catch (error) {
+      console.error('[Builder] Failed to start build:', error);
+      setSessionStatus('failed');
+    }
+  };
+
   return (
-    <div className="space-y-8">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-          AI App Builder
-        </h1>
-        <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-          Create powerful applications using AI agents. Simply describe what you want to build, 
-          and our intelligent agents will handle the rest.
-        </p>
-      </div>
+    <div className="h-screen flex flex-col overflow-hidden">
+      {/* Toast 通知容器 */}
+      <Toaster position="top-right" />
 
-      {/* Coming Soon Banner */}
-      <div className="bg-gradient-to-r from-primary-600 to-primary-800 rounded-xl p-8 text-white text-center">
-        <Zap className="w-16 h-16 mx-auto mb-4 text-primary-200" />
-        <h2 className="text-2xl font-bold mb-2">Visual Builder Coming Soon!</h2>
-        <p className="text-primary-100">
-          We're building an amazing drag-and-drop interface powered by AI agents.
-        </p>
-      </div>
-
-      {/* Features Preview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="card p-6 text-center">
-          <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg w-fit mx-auto mb-4">
-            <Palette className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-            UI Agent
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            Automatically generates beautiful, responsive user interfaces based on your requirements.
-          </p>
+      {/* 主内容区 - 三列布局 */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* 左侧面板 - 30% */}
+        <div className="w-[30%] min-w-[320px] max-w-[400px] flex-shrink-0">
+          <BuilderSidebar onStartBuild={handleStartBuild} />
         </div>
 
-        <div className="card p-6 text-center">
-          <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg w-fit mx-auto mb-4">
-            <Code className="w-8 h-8 text-green-600 dark:text-green-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-            Backend Agent
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            Creates robust APIs, handles business logic, and implements security best practices.
-          </p>
+        {/* 中央工作区 - 50% */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <BuilderWorkspace />
         </div>
 
-        <div className="card p-6 text-center">
-          <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-lg w-fit mx-auto mb-4">
-            <Database className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-            Database Agent
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            Designs optimal database schemas and handles data relationships automatically.
-          </p>
-        </div>
-
-        <div className="card p-6 text-center">
-          <div className="p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg w-fit mx-auto mb-4">
-            <Wrench className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-            Integration Agent
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            Connects your app with external services, APIs, and third-party tools seamlessly.
-          </p>
-        </div>
-
-        <div className="card p-6 text-center">
-          <div className="p-3 bg-red-100 dark:bg-red-900/20 rounded-lg w-fit mx-auto mb-4">
-            <Cloud className="w-8 h-8 text-red-600 dark:text-red-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-            Deployment Agent
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            Handles deployment, scaling, and monitoring of your applications in the cloud.
-          </p>
-        </div>
-
-        <div className="card p-6 text-center">
-          <div className="p-3 bg-indigo-100 dark:bg-indigo-900/20 rounded-lg w-fit mx-auto mb-4">
-            <Zap className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-            AI Orchestrator
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            Coordinates all agents to work together seamlessly and efficiently.
-          </p>
+        {/* 右侧边栏 - 20% */}
+        <div className="w-[20%] min-w-[280px] max-w-[360px] flex-shrink-0">
+          <DecisionSidebarPanel />
         </div>
       </div>
 
-      {/* How it works */}
-      <div className="card p-8">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
-          How It Works
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="text-center">
-            <div className="w-12 h-12 bg-primary-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
-              1
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-              Describe Your App
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              Tell us what you want to build in plain English. Our AI understands your requirements.
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="w-12 h-12 bg-primary-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
-              2
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-              AI Agents Build
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              Our specialized agents work together to create your app's frontend, backend, and database.
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="w-12 h-12 bg-primary-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
-              3
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-              Deploy & Iterate
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              Your app is automatically deployed and ready to use. Make changes anytime with natural language.
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* 底部可折叠区 - Agent 协作关系图 */}
+      <CollaborationPanel sessionId={activeSessionId} />
     </div>
-  )
+  );
 }

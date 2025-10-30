@@ -26,6 +26,9 @@ class WebSocketService {
   private eventHandlers: Map<string, Set<EventHandler>> = new Map();
   private connectionStatus: ConnectionStatus = 'disconnected';
   private statusListeners: Set<(status: ConnectionStatus) => void> = new Set();
+  private heartbeatTimeout: NodeJS.Timeout | null = null;
+  private reconnectAttempts: number = 0;
+  private readonly MAX_RECONNECT_DELAY = 10000; // 10秒最大延迟
 
   /**
    * 初始化 WebSocket 连接
@@ -37,6 +40,7 @@ class WebSocketService {
 
     this.config = config;
 
+    // T161: 实现指数退避重连 (1s, 2s, 4s, 8s, 10s max)
     this.socket = io(config.url, {
       auth: {
         token: config.token,
@@ -44,7 +48,7 @@ class WebSocketService {
       autoConnect: config.autoConnect !== false,
       reconnection: config.reconnection !== false,
       reconnectionDelay: config.reconnectionDelay || 1000,
-      reconnectionDelayMax: config.reconnectionDelayMax || 5000,
+      reconnectionDelayMax: this.MAX_RECONNECT_DELAY,
       reconnectionAttempts: config.reconnectionAttempts || Infinity,
     });
 
@@ -59,12 +63,25 @@ class WebSocketService {
 
     this.socket.on('connect', () => {
       console.log('[WebSocket] Connected');
+      this.reconnectAttempts = 0; // 重置重连计数器
       this.updateStatus('connected');
+
+      // T163: 重连后自动请求状态同步
+      this.requestStateSync();
     });
 
     this.socket.on('disconnect', (reason) => {
       console.log('[WebSocket] Disconnected:', reason);
       this.updateStatus('disconnected');
+
+      // 清理心跳超时
+      if (this.heartbeatTimeout) {
+        clearTimeout(this.heartbeatTimeout);
+        this.heartbeatTimeout = null;
+      }
+
+      // T164: 通知用户连接已断开
+      this.notifyConnectionLost();
     });
 
     this.socket.on('connect_error', (error) => {
@@ -75,10 +92,14 @@ class WebSocketService {
     this.socket.on('reconnect', (attemptNumber) => {
       console.log('[WebSocket] Reconnected after', attemptNumber, 'attempts');
       this.updateStatus('connected');
+
+      // T164: 通知用户连接已恢复
+      this.notifyConnectionRestored();
     });
 
     this.socket.on('reconnecting', (attemptNumber) => {
       console.log('[WebSocket] Reconnecting attempt', attemptNumber);
+      this.reconnectAttempts = attemptNumber;
       this.updateStatus('reconnecting');
     });
 
@@ -223,6 +244,62 @@ class WebSocketService {
    */
   getSocketId(): string | undefined {
     return this.socket?.id;
+  }
+
+  // ========== Phase 13: WebSocket Resilience ==========
+
+  /**
+   * T163: 请求状态同步
+   */
+  private requestStateSync(): void {
+    if (!this.socket || !this.socket.connected) return;
+
+    // 请求服务器同步状态
+    this.socket.emit('request:state:sync', {
+      timestamp: Date.now(),
+    });
+
+    console.log('[WebSocket] State sync requested');
+  }
+
+  /**
+   * T164: 通知用户连接已断开
+   */
+  private notifyConnectionLost(): void {
+    // 这里可以触发 toast 通知或其他 UI 提示
+    console.warn('[WebSocket] Connection lost - attempting to reconnect');
+
+    // 触发自定义事件，UI 组件可以监听
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('websocket:connection-lost', {
+          detail: { timestamp: Date.now() },
+        })
+      );
+    }
+  }
+
+  /**
+   * T164: 通知用户连接已恢复
+   */
+  private notifyConnectionRestored(): void {
+    console.log('[WebSocket] Connection restored');
+
+    // 触发自定义事件
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('websocket:connection-restored', {
+          detail: { timestamp: Date.now() },
+        })
+      );
+    }
+  }
+
+  /**
+   * 获取重连尝试次数
+   */
+  getReconnectAttempts(): number {
+    return this.reconnectAttempts;
   }
 }
 

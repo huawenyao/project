@@ -35,27 +35,32 @@ export const AgentStatusCard: React.FC<AgentStatusCardProps> = ({
     }
   }, [status.status]);
 
+  // 辅助函数：判断是否使用友好语气
+  const isFriendlyTone = (tone?: string): boolean => {
+    return tone?.includes('friendly') || tone?.includes('humorous') || false;
+  };
+
   // T102: 生成友好的状态消息
   const getFriendlyStatusMessage = (): string => {
     const progress = status.progressPercentage;
-    const tone = persona?.personalityTone || 'professional';
+    const tone = persona?.personalityTone;
 
     // 如果有当前操作，添加进度描述
     if (status.currentOperation && status.status === 'in_progress') {
       if (progress < 25) {
-        return tone === 'friendly'
+        return isFriendlyTone(tone)
           ? `🌱 开始啦！${status.currentOperation}`
           : status.currentOperation;
       } else if (progress < 50) {
-        return tone === 'friendly'
+        return isFriendlyTone(tone)
           ? `🔨 进展顺利：${status.currentOperation}`
           : status.currentOperation;
       } else if (progress < 75) {
-        return tone === 'friendly'
+        return isFriendlyTone(tone)
           ? `✨ 过半了！${status.currentOperation}`
           : status.currentOperation;
       } else {
-        return tone === 'friendly'
+        return isFriendlyTone(tone)
           ? `🎯 快完成了：${status.currentOperation}`
           : status.currentOperation;
       }
@@ -66,13 +71,13 @@ export const AgentStatusCard: React.FC<AgentStatusCardProps> = ({
 
   // T103: 获取状态对应的鼓励性消息
   const getEncouragingMessage = (): string | null => {
-    const tone = persona?.personalityTone || 'professional';
+    const tone = persona?.personalityTone;
 
     if (status.status === 'completed') {
-      return tone === 'friendly' ? '🎉 太棒了！任务完成' : '✓ 任务已完成';
-    } else if (status.status === 'retrying' && tone === 'friendly') {
+      return isFriendlyTone(tone) ? '🎉 太棒了！任务完成' : '✓ 任务已完成';
+    } else if (status.status === 'retrying' && isFriendlyTone(tone)) {
       return '💪 不放弃！正在重试';
-    } else if (status.status === 'in_progress' && status.progressPercentage >= 90 && tone === 'friendly') {
+    } else if (status.status === 'in_progress' && status.progressPercentage >= 90 && isFriendlyTone(tone)) {
       return '🌟 冲刺阶段！';
     }
 

@@ -363,16 +363,16 @@
 
 ### Backend WebSocket
 
-- [ ] T158 Implement heartbeat/ping-pong in WebSocketService (30s interval)
-- [ ] T159 Add connection state broadcast to clients
-- [ ] T160 Implement state sync on reconnection in sessionSubscription handler
+- [X] T158 Implement heartbeat/ping-pong in WebSocketService (30s interval)
+- [X] T159 Add connection state broadcast to clients
+- [X] T160 Implement state sync on reconnection in sessionSubscription handler
 
 ### Frontend WebSocket
 
-- [ ] T161 Implement exponential backoff reconnection (1s, 2s, 4s, 8s, 10s max) in WebSocketService
-- [ ] T162 Add connection status indicator in frontend/src/components/ConnectionIndicator.tsx
-- [ ] T163 Implement automatic state resync after reconnection in useWebSocket hook
-- [ ] T164 Add user notification on connection lost/restored using toast
+- [X] T161 Implement exponential backoff reconnection (1s, 2s, 4s, 8s, 10s max) in WebSocketService
+- [X] T162 Add connection status indicator in frontend/src/components/ConnectionIndicator.tsx
+- [X] T163 Implement automatic state resync after reconnection in useWebSocket hook
+- [X] T164 Add user notification on connection lost/restored using toast
 
 ---
 

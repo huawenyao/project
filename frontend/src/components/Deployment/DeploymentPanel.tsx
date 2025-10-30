@@ -78,7 +78,7 @@ export const DeploymentPanel: React.FC<DeploymentPanelProps> = ({
   const [logs, setLogs] = useState<string[]>([]);
   const [configModalVisible, setConfigModalVisible] = useState(false);
   const logsEndRef = useRef<HTMLDivElement>(null);
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // 自动滚动日志到底部
   useEffect(() => {

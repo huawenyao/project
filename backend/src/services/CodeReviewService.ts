@@ -126,7 +126,6 @@ ${code}
 
       const response = await this.aiService.generateResponse(userPrompt, {
         systemPrompt,
-        userPrompt,
         temperature: 0.3,
         maxTokens: 2000,
       });
@@ -316,7 +315,6 @@ ${modifiedCode}
 
       const response = await this.aiService.generateResponse(userPrompt, {
         systemPrompt,
-        userPrompt,
         temperature: 0.2,
         maxTokens: 1000,
       });
@@ -373,7 +371,6 @@ ${modifiedCode}
 
       const response = await this.aiService.generateResponse(userPrompt, {
         systemPrompt,
-        userPrompt,
         temperature: 0.3,
         maxTokens: 1000,
       });

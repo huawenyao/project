@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "langgraph-ai-builder"
+version = "0.1.0"
+description = "LangGraph Server for AI Builder Studio"
+authors = ["AI Builder Team"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+langgraph = "^1.0.0"
+langchain = "^1.0.0"
+langchain-openai = "^1.0.0"
+langchain-anthropic = "^1.0.0"
+fastapi = "^0.115.0"
+uvicorn = "^0.30.0"
+python-dotenv = "^1.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

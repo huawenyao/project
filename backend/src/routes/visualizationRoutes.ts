@@ -541,11 +541,10 @@ router.get('/agents/personas/:agentType', async (req: Request, res: Response) =>
 router.get('/sessions/:sessionId/replay', async (req: Request, res: Response) => {
   try {
     const { sessionId } = req.params;
-    const { ReplayService } = await import('../services/ReplayService');
-    const replayService = ReplayService.getInstance();
+    const replayService = (await import('../services/ReplayService')).default;
 
-    const result = await replayService.loadReplayData(sessionId);
-    res.status(result.success ? 200 : 404).json(result);
+    const session = await replayService.loadReplaySession(sessionId);
+    res.status(200).json({ success: true, data: session });
   } catch (error: any) {
     logger.error('Error getting replay data:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -634,13 +633,14 @@ router.post('/metrics', async (req: Request, res: Response) => {
 
     const { UserInteractionMetric } = await import('../models/UserInteractionMetric.model');
 
-    // 创建指标记录
+    // 创建指标记录（匿名化）
     await UserInteractionMetric.create({
       eventType,
-      eventData: eventData || {},
-      anonymousSessionId,
-      timestamp: new Date(),
-      optIn: true,
+      eventMetadata: eventData || {},
+      sessionId: anonymousSessionId, // 使用匿名会话ID
+      userId: 'anonymous', // 匿名用户
+      timestamp: new Date().toISOString(),
+      anonymized: true,
     });
 
     res.status(201).json({

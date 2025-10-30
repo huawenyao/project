@@ -111,7 +111,7 @@ export const AgentMonitorEnhanced: React.FC<AgentMonitorEnhancedProps> = ({
   onAgentClick,
   className = '',
 }) => {
-  const { connected, subscribe, joinSession, leaveSession } = useWebSocket();
+  const { isConnected, subscribe, joinSession, leaveSession } = useWebSocket();
   const {
     statuses,
     activeAgents,

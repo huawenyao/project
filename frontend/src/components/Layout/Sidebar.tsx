@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { 
-  LayoutDashboard, 
-  Wrench, 
-  Layers, 
-  FileText, 
-  Bot, 
+import {
+  LayoutDashboard,
+  Wrench,
+  Layers,
+  FileText,
+  Bot,
   Settings,
   Menu,
   X,
@@ -96,29 +96,36 @@ function SidebarContent() {
   return (
     <nav className="flex-1 px-4 py-6 space-y-1">
       {navigation.map((item) => {
-        const isActive = location.pathname === item.href || 
+        const isActive = location.pathname === item.href ||
           (item.href !== '/dashboard' && location.pathname.startsWith(item.href))
-        
+
         return (
           <NavLink
             key={item.name}
             to={item.href}
             className={clsx(
-              'group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200',
+              'group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200',
               isActive
                 ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
                 : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
             )}
           >
-            <item.icon
-              className={clsx(
-                'mr-3 h-5 w-5 flex-shrink-0',
-                isActive
-                  ? 'text-primary-600 dark:text-primary-400'
-                  : 'text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-300'
-              )}
-            />
-            {item.name}
+            <div className="flex items-center">
+              <item.icon
+                className={clsx(
+                  'mr-3 h-5 w-5 flex-shrink-0',
+                  isActive
+                    ? 'text-primary-600 dark:text-primary-400'
+                    : 'text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-300'
+                )}
+              />
+              {item.name}
+            </div>
+            {(item as any).badge && (
+              <span className="ml-auto px-2 py-0.5 text-xs font-semibold rounded-full bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300">
+                {(item as any).badge}
+              </span>
+            )}
           </NavLink>
         )
       })}

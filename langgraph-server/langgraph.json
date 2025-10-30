@@ -1,0 +1,11 @@
+{
+  "node_version": "20",
+  "dockerfile_lines": [],
+  "dependencies": [".", "./src"],
+  "graphs": {
+    "builder_agent": "./src/agents/builder_agent.py:create_builder_graph",
+    "ui_agent": "./src/agents/ui_agent.py:create_ui_graph",
+    "database_agent": "./src/agents/database_agent.py:create_database_graph"
+  },
+  "env": ".env"
+}
