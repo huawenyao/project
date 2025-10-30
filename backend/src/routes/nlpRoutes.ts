@@ -6,7 +6,7 @@
 
 import express from 'express';
 import NLPService from '../services/NLPService';
-import { auth } from '../middleware/auth';
+import { authenticate as auth } from '../middleware/auth';
 import { logger } from '../utils/logger';
 
 const router = express.Router();

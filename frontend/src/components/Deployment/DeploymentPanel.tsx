@@ -409,7 +409,7 @@ export const DeploymentPanel: React.FC<DeploymentPanelProps> = ({
             ) : (
               <Alert
                 message="暂无正在进行的部署"
-                description="点击"一键部署"按钮开始部署您的项目"
+                description="点击「一键部署」按钮开始部署您的项目"
                 type="info"
                 showIcon
                 action={

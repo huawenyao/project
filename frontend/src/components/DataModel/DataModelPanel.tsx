@@ -214,7 +214,7 @@ export const DataModelPanel: React.FC<DataModelPanelProps> = ({
             ) : (
               <Alert
                 message="暂无数据模型"
-                description="点击"智能推荐"按钮，让 AI 为您的项目推荐合适的数据模型"
+                description="点击「智能推荐」按钮，让 AI 为您的项目推荐合适的数据模型"
                 type="info"
                 showIcon
                 action={
@@ -326,7 +326,7 @@ export const DataModelPanel: React.FC<DataModelPanelProps> = ({
             ) : (
               <Alert
                 message="暂无推荐结果"
-                description="点击"智能推荐"按钮获取 AI 推荐的数据模型"
+                description="点击「智能推荐」按钮获取 AI 推荐的数据模型"
                 type="info"
                 showIcon
               />

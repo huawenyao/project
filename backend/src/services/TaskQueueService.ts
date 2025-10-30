@@ -5,7 +5,7 @@
  * 管理 Agent 任务的排队、分发和执行
  */
 
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { logger } from '../utils/logger';
 
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
