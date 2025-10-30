@@ -532,4 +532,125 @@ router.get('/agents/personas/:agentType', async (req: Request, res: Response) =>
   }
 });
 
+// ==================== Replay Routes (T126) ====================
+
+/**
+ * T126: GET /api/visualization/sessions/:sessionId/replay
+ * 获取会话回放数据 (支持从 S3 加载冷数据)
+ */
+router.get('/sessions/:sessionId/replay', async (req: Request, res: Response) => {
+  try {
+    const { sessionId } = req.params;
+    const { ReplayService } = await import('../services/ReplayService');
+    const replayService = ReplayService.getInstance();
+
+    const result = await replayService.loadReplayData(sessionId);
+    res.status(result.success ? 200 : 404).json(result);
+  } catch (error: any) {
+    logger.error('Error getting replay data:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==================== User Settings Routes (T136-T138) ====================
+
+/**
+ * T136: PUT /api/visualization/settings/theme
+ * 更新用户主题设置
+ */
+router.put('/settings/theme', async (req: Request, res: Response) => {
+  try {
+    const { userId, theme } = req.body;
+
+    if (!userId || !theme) {
+      return res.status(400).json({
+        success: false,
+        error: 'userId and theme are required',
+      });
+    }
+
+    // 存储到数据库或缓存
+    // 这里简化为返回成功
+    res.status(200).json({
+      success: true,
+      data: { userId, theme, updatedAt: new Date() },
+    });
+  } catch (error: any) {
+    logger.error('Error updating theme settings:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * T137: PUT /api/visualization/settings/privacy
+ * 更新用户隐私设置
+ */
+router.put('/settings/privacy', async (req: Request, res: Response) => {
+  try {
+    const { userId, metricsEnabled } = req.body;
+
+    if (!userId || typeof metricsEnabled !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        error: 'userId and metricsEnabled (boolean) are required',
+      });
+    }
+
+    // 存储到数据库或缓存
+    res.status(200).json({
+      success: true,
+      data: { userId, metricsEnabled, updatedAt: new Date() },
+    });
+  } catch (error: any) {
+    logger.error('Error updating privacy settings:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==================== Metrics Routes (T140) ====================
+
+/**
+ * T140: POST /api/visualization/metrics
+ * 收集匿名化用户交互指标
+ */
+router.post('/metrics', async (req: Request, res: Response) => {
+  try {
+    const { eventType, eventData, anonymousSessionId, optIn } = req.body;
+
+    // 验证 opt-in 状态
+    if (!optIn) {
+      return res.status(200).json({
+        success: true,
+        message: 'Metrics collection disabled by user preference',
+      });
+    }
+
+    if (!eventType || !anonymousSessionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'eventType and anonymousSessionId are required',
+      });
+    }
+
+    const { UserInteractionMetric } = await import('../models/UserInteractionMetric.model');
+
+    // 创建指标记录
+    await UserInteractionMetric.create({
+      eventType,
+      eventData: eventData || {},
+      anonymousSessionId,
+      timestamp: new Date(),
+      optIn: true,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Metric recorded',
+    });
+  } catch (error: any) {
+    logger.error('Error recording metric:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 export default router;

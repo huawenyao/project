@@ -8,6 +8,8 @@ import { IntegrationAgent } from '../agents/IntegrationAgent';
 import { DeploymentAgent } from '../agents/DeploymentAgent';
 import { agentStatusTracker, AgentType } from './AgentStatusTracker';
 import visualizationService from './VisualizationService';
+import errorClassifier from './ErrorClassifier';
+import { AgentErrorRecord } from '../models/AgentErrorRecord.model';
 
 export interface AgentRequest {
   requestId: string;
@@ -129,7 +131,13 @@ export class AgentOrchestrator extends EventEmitter {
             throw new Error(`Agent not found: ${planStep.agentType}`);
           }
 
-          const result = await agent.execute(planStep.action, planStep.parameters, request.context);
+          // T115: Execute with exponential backoff retry for minor errors
+          const result = await this.executeAgentWithRetry(
+            agent,
+            planStep,
+            request,
+            agentStatusIds.get(planStep.agentType)
+          );
 
           step.status = 'completed';
           step.result = result;
@@ -151,6 +159,9 @@ export class AgentOrchestrator extends EventEmitter {
           step.error = error instanceof Error ? error.message : 'Unknown error';
 
           this.emit('step_failed', { requestId: request.requestId, step, error });
+
+          // T116: Record error to AgentErrorRecord
+          await this.recordAgentError(request.requestId, planStep.agentType, error);
 
           // Fail agent tracking with WebSocket push
           const statusId = agentStatusIds.get(planStep.agentType);
@@ -660,5 +671,148 @@ ${nlpAnalysis ? `AI 分析结果：
       activeRequests: this.activeRequests.size,
       agents: status
     };
+  }
+
+  /**
+   * T115: Execute agent with intelligent retry mechanism
+   * Implements exponential backoff retry for minor errors (1s, 2s, 4s)
+   */
+  private async executeAgentWithRetry(
+    agent: any,
+    planStep: any,
+    request: AgentRequest,
+    statusId?: string
+  ): Promise<any> {
+    let retryCount = 0;
+    let lastError: Error;
+
+    while (retryCount <= 3) {
+      try {
+        // Execute the agent task
+        const result = await agent.execute(
+          planStep.action,
+          planStep.parameters,
+          request.context
+        );
+
+        // Success - return result
+        return result;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+
+        // Classify the error
+        const classification = errorClassifier.classify(lastError);
+
+        // Check if we should retry
+        if (classification.isRetryable && retryCount < 3) {
+          retryCount++;
+
+          // Calculate backoff delay (1s, 2s, 4s)
+          const delay = errorClassifier.calculateBackoffDelay(retryCount - 1, 1000);
+
+          logger.warn(
+            `[AgentOrchestrator] ${planStep.agentType} failed (attempt ${retryCount}/3): ${lastError.message}. Retrying in ${delay}ms...`
+          );
+
+          // T117: Emit error-occurred WebSocket event with retry state
+          this.emit('agent-error', {
+            sessionId: request.requestId,
+            agentType: planStep.agentType,
+            error: lastError.message,
+            classification,
+            retryCount,
+            maxRetries: 3,
+            retrying: true,
+            delay,
+          });
+
+          // Update agent status to retrying
+          if (statusId) {
+            await agentStatusTracker.updateAgentStatus({
+              statusId,
+              status: 'retrying',
+              currentTask: `${planStep.action} (重试 ${retryCount}/3)`,
+            });
+          }
+
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, delay));
+
+          continue;
+        }
+
+        // Cannot retry or max retries reached
+        logger.error(
+          `[AgentOrchestrator] ${planStep.agentType} failed after ${retryCount} retries: ${lastError.message}`
+        );
+
+        // T117: Emit error-occurred WebSocket event (final failure)
+        this.emit('agent-error', {
+          sessionId: request.requestId,
+          agentType: planStep.agentType,
+          error: lastError.message,
+          classification,
+          retryCount,
+          maxRetries: 3,
+          retrying: false,
+          critical: planStep.critical,
+        });
+
+        throw lastError;
+      }
+    }
+
+    throw lastError!;
+  }
+
+  /**
+   * T116: Record error to AgentErrorRecord model
+   */
+  private async recordAgentError(
+    sessionId: string,
+    agentType: string,
+    error: any
+  ): Promise<void> {
+    try {
+      const classification = errorClassifier.classify(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
+      await AgentErrorRecord.create({
+        sessionId,
+        agentType: this.mapAgentTypeToEnum(agentType),
+        errorCode: classification.category.toUpperCase(),
+        errorMessage,
+        errorContext: {
+          stack: errorStack,
+          classification: {
+            severity: classification.severity,
+            category: classification.category,
+            isRetryable: classification.isRetryable,
+            suggestedAction: classification.suggestedAction,
+          },
+        },
+        severity: this.mapErrorSeverity(classification.severity),
+        resolution: classification.isRetryable ? 'retrying' : 'user_intervention_required',
+        timestamp: new Date(),
+      });
+
+      logger.info(`[AgentOrchestrator] Recorded error for ${agentType} in session ${sessionId}`);
+    } catch (recordError) {
+      logger.error('[AgentOrchestrator] Failed to record error:', recordError);
+    }
+  }
+
+  /**
+   * Map ErrorClassifier severity to model severity
+   */
+  private mapErrorSeverity(severity: string): 'critical' | 'high' | 'medium' | 'low' {
+    const mapping: Record<string, 'critical' | 'high' | 'medium' | 'low'> = {
+      'fatal': 'critical',
+      'critical': 'critical',
+      'moderate': 'medium',
+      'minor': 'low',
+    };
+    return mapping[severity] || 'medium';
   }
 }

@@ -62,12 +62,12 @@
 ### Backend Core Services
 
 - [X] T024 Create VisualizationService base service in backend/src/services/VisualizationService.ts
-- [ ] T025 Create WebSocketService with Socket.IO integration in backend/src/services/WebSocketService.ts
+- [X] T025 Create WebSocketService with Socket.IO integration in backend/src/services/WebSocketService.ts
 - [X] T026 [P] Create AgentStatusService in backend/src/services/AgentStatusService.ts
 - [X] T027 [P] Create DecisionService in backend/src/services/DecisionService.ts
 - [X] T028 Create DataArchiveService with S3 integration in backend/src/services/DataArchiveService.ts
-- [ ] T029 [P] Create MetricsCollector service for anonymized data in backend/src/services/MetricsCollector.ts
-- [ ] T030 [P] Create ReplayService for historical session playback in backend/src/services/ReplayService.ts
+- [X] T029 [P] Create MetricsCollector service for anonymized data in backend/src/services/MetricsCollector.ts
+- [X] T030 [P] Create ReplayService for historical session playback in backend/src/services/ReplayService.ts
 
 ### WebSocket Infrastructure
 
@@ -259,17 +259,17 @@
 
 ### Backend Error Handling
 
-- [ ] T114 Create error classification logic (minor vs critical) in backend/src/services/ErrorClassifier.ts
-- [ ] T115 Implement exponential backoff retry for minor errors (1s, 2s, 4s) in AgentOrchestrator
-- [ ] T116 Add error recording to AgentErrorRecord model in backend/src/services/AgentStatusTracker.ts
-- [ ] T117 Implement error-occurred WebSocket event with retry state in backend/src/websocket/handlers/errorEmitter.ts
+- [X] T114 Create error classification logic (minor vs critical) in backend/src/services/ErrorClassifier.ts
+- [X] T115 Implement exponential backoff retry for minor errors (1s, 2s, 4s) in AgentOrchestrator
+- [X] T116 Add error recording to AgentErrorRecord model in backend/src/services/AgentStatusTracker.ts
+- [X] T117 Implement error-occurred WebSocket event with retry state in backend/src/websocket/handlers/errorEmitter.ts
 
 ### Frontend Error Handling
 
-- [ ] T118 [P] Create ErrorCard component with action buttons (retry/skip/abort) in frontend/src/components/Visualization/ErrorCard.tsx
-- [ ] T119 Implement error state rendering in AgentStatusCard (red warning, error details)
-- [ ] T120 Add retry/skip/abort action handlers in VisualizationPanel
-- [ ] T121 Display retry counter (X/3) in AgentStatusCard during retrying state
+- [X] T118 [P] Create ErrorCard component with action buttons (retry/skip/abort) in frontend/src/components/Visualization/ErrorCard.tsx
+- [X] T119 Implement error state rendering in AgentStatusCard (red warning, error details)
+- [X] T120 Add retry/skip/abort action handlers in VisualizationPanel
+- [X] T121 Display retry counter (X/3) in AgentStatusCard during retrying state
 
 ---
 
@@ -279,18 +279,18 @@
 
 ### Backend Archiving
 
-- [ ] T122 Implement daily archive cron job in backend/src/jobs/archiveOldSessions.ts
-- [ ] T123 Add S3 upload logic with gzip compression in DataArchiveService
-- [ ] T124 Implement archive metadata tracking in BuildSession model
-- [ ] T125 Add archive status detection in VisualizationService
-- [ ] T126 Implement GET /api/visualization/sessions/:id/replay endpoint with S3 loading in backend/src/routes/visualizationRoutes.ts
+- [X] T122 Implement daily archive cron job in backend/src/jobs/archiveOldSessions.ts
+- [X] T123 Add S3 upload logic with gzip compression in DataArchiveService
+- [X] T124 Implement archive metadata tracking in BuildSession model
+- [X] T125 Add archive status detection in VisualizationService
+- [X] T126 Implement GET /api/visualization/sessions/:id/replay endpoint with S3 loading in backend/src/routes/visualizationRoutes.ts
 
 ### Frontend Replay
 
-- [ ] T127 [P] Create ReplayPlayer component with playback controls in frontend/src/components/Visualization/ReplayPlayer.tsx
-- [ ] T128 Implement replay timeline scrubbing in ReplayPlayer
-- [ ] T129 Add loading indicator for archived session data (3s timeout notice)
-- [ ] T130 Implement session history list with hot/cold data indicators
+- [X] T127 [P] Create ReplayPlayer component with playback controls in frontend/src/components/Visualization/ReplayPlayer.tsx
+- [X] T128 Implement replay timeline scrubbing in ReplayPlayer
+- [X] T129 Add loading indicator for archived session data (3s timeout notice)
+- [X] T130 Implement session history list with hot/cold data indicators
 
 ---
 
@@ -300,17 +300,17 @@
 
 ### Frontend Theme Implementation
 
-- [ ] T131 [P] Create ThemeToggle component in frontend/src/components/Visualization/ThemeToggle.tsx
-- [ ] T132 [P] Create FocusModeToggle component in frontend/src/components/Visualization/FocusModeToggle.tsx
-- [ ] T133 Implement theme persistence to localStorage in themeStore
-- [ ] T134 Add theme-specific animations and transitions in frontend/src/styles/animations.css
-- [ ] T135 Implement focus mode (hide low-priority agents and decisions) in VisualizationPanel
+- [X] T131 [P] Create ThemeToggle component in frontend/src/components/Visualization/ThemeToggle.tsx
+- [X] T132 [P] Create FocusModeToggle component in frontend/src/components/Visualization/FocusModeToggle.tsx
+- [X] T133 Implement theme persistence to localStorage in themeStore
+- [X] T134 Add theme-specific animations and transitions in frontend/src/styles/animations.css
+- [X] T135 Implement focus mode (hide low-priority agents and decisions) in VisualizationPanel
 
 ### Backend User Settings
 
-- [ ] T136 Implement PUT /api/visualization/settings/theme endpoint in backend/src/routes/visualizationRoutes.ts
-- [ ] T137 [P] Implement PUT /api/visualization/settings/privacy endpoint in backend/src/routes/visualizationRoutes.ts
-- [ ] T138 Add user preference persistence to database
+- [X] T136 Implement PUT /api/visualization/settings/theme endpoint in backend/src/routes/visualizationRoutes.ts
+- [X] T137 [P] Implement PUT /api/visualization/settings/privacy endpoint in backend/src/routes/visualizationRoutes.ts
+- [X] T138 Add user preference persistence to database
 
 ---
 
@@ -320,19 +320,19 @@
 
 ### Backend Metrics
 
-- [ ] T139 Implement client-side anonymization in MetricsCollector service
-- [ ] T140 Implement POST /api/visualization/metrics endpoint in backend/src/routes/visualizationRoutes.ts
-- [ ] T141 Add metrics aggregation logic for 8 core event types
-- [ ] T142 Implement 12-month data retention cleanup in backend/src/jobs/cleanupOldMetrics.ts
-- [ ] T143 Add GDPR-compliant data export/deletion endpoints
+- [X] T139 Implement client-side anonymization in MetricsCollector service
+- [X] T140 Implement POST /api/visualization/metrics endpoint in backend/src/routes/visualizationRoutes.ts
+- [X] T141 Add metrics aggregation logic for 8 core event types
+- [X] T142 Implement 12-month data retention cleanup in backend/src/jobs/cleanupOldMetrics.ts
+- [X] T143 Add GDPR-compliant data export/deletion endpoints
 
 ### Frontend Metrics
 
-- [ ] T144 Integrate PostHog client SDK in MetricsService
-- [ ] T145 Implement Cookie consent banner in frontend/src/components/CookieConsent.tsx
-- [ ] T146 Add opt-in/opt-out toggle in Settings page
-- [ ] T147 Implement 8 core metric tracking events (decision click, theme switch, etc.)
-- [ ] T148 Add PII sanitization before metric submission in MetricsService
+- [X] T144 Integrate PostHog client SDK in MetricsService
+- [X] T145 Implement Cookie consent banner in frontend/src/components/CookieConsent.tsx
+- [X] T146 Add opt-in/opt-out toggle in Settings page
+- [X] T147 Implement 8 core metric tracking events (decision click, theme switch, etc.)
+- [X] T148 Add PII sanitization before metric submission in MetricsService
 
 ---
 
@@ -342,18 +342,18 @@
 
 ### Backend Performance
 
-- [ ] T149 Implement Redis caching for AgentPersona configurations in backend/src/services/AgentStatusTracker.ts
-- [ ] T150 Add Redis caching for active session states (5 min TTL)
-- [ ] T151 Implement database connection pooling optimization in backend/src/services/DatabaseService.ts
-- [ ] T152 Add WebSocket message batching for low-priority updates
+- [X] T149 Implement Redis caching for AgentPersona configurations in backend/src/services/AgentStatusTracker.ts
+- [X] T150 Add Redis caching for active session states (5 min TTL)
+- [X] T151 Implement database connection pooling optimization in backend/src/services/DatabaseService.ts
+- [X] T152 Add WebSocket message batching for low-priority updates
 
 ### Frontend Performance
 
-- [ ] T153 Implement virtual scrolling for decision timeline using @tanstack/react-virtual in DecisionTimeline
-- [ ] T154 Add React.memo to all visualization components (AgentStatusCard, DecisionCard, etc.)
-- [ ] T155 Implement throttled WebSocket updates (500ms) in useAgentStatus hook
-- [ ] T156 Move graph layout calculation to Web Worker in frontend/src/workers/graphLayout.worker.ts
-- [ ] T157 Add performance monitoring (FPS counter) in frontend/src/utils/performanceMonitor.ts
+- [X] T153 Implement virtual scrolling for decision timeline using @tanstack/react-virtual in DecisionTimeline
+- [X] T154 Add React.memo to all visualization components (AgentStatusCard, DecisionCard, etc.)
+- [X] T155 Implement throttled WebSocket updates (500ms) in useAgentStatus hook
+- [X] T156 Move graph layout calculation to Web Worker in frontend/src/workers/graphLayout.worker.ts
+- [X] T157 Add performance monitoring (FPS counter) in frontend/src/utils/performanceMonitor.ts
 
 ---
 
