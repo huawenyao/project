@@ -38,7 +38,7 @@ export default function AgentStatusGrid({ agents, onAgentClick }: AgentStatusGri
           onClick={() => onAgentClick?.(agent)}
           className="cursor-pointer transition-transform hover:scale-105"
         >
-          <AgentStatusCard agent={agent} />
+          <AgentStatusCard status={agent} />
         </div>
       ))}
     </div>
