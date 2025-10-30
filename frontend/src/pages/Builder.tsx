@@ -1,12 +1,15 @@
 /**
  * Builder 页面 - AI 驱动的应用构建器
- * 三列布局：左侧需求输入 | 中央 Agent 工作区 | 右侧决策时间线
+ * 两列布局：中央 Agent 工作区 | 右侧决策时间线
+ * 新建项目改为浮动按钮触发弹窗
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import BuilderSidebar, { type BuildRequirements } from '../components/Builder/BuilderSidebar';
+import { Button } from 'antd';
+import { Plus } from 'lucide-react';
+import NewProjectModal, { type BuildRequirements } from '../components/Builder/NewProjectModal';
 import BuilderWorkspace from '../components/Builder/BuilderWorkspace';
 import DecisionSidebarPanel from '../components/Builder/DecisionSidebarPanel';
 import CollaborationPanel from '../components/Builder/CollaborationPanel';
@@ -16,6 +19,7 @@ import { useBuilderWebSocket } from '../hooks/useBuilderWebSocket.tsx';
 export default function Builder() {
   const { sessionId: urlSessionId } = useParams<{ sessionId?: string }>();
   const { currentSessionId, setSessionId, setSessionStatus, reset } = useBuilderStore();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // 使用 URL 中的 sessionId 或当前会话 ID
   const activeSessionId = urlSessionId || currentSessionId;
@@ -149,20 +153,36 @@ export default function Builder() {
       {/* Toast 通知容器 */}
       <Toaster position="top-right" />
 
-      {/* 主内容区 - 三列布局 */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* 左侧面板 - 30% */}
-        <div className="w-[30%] min-w-[320px] max-w-[400px] flex-shrink-0">
-          <BuilderSidebar onStartBuild={handleStartBuild} />
-        </div>
+      {/* 新建项目弹窗 */}
+      <NewProjectModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onStartBuild={handleStartBuild}
+      />
 
-        {/* 中央工作区 - 50% */}
+      {/* 浮动的新建项目按钮 */}
+      <Button
+        type="primary"
+        size="large"
+        icon={<Plus className="w-5 h-5" />}
+        onClick={() => setIsModalOpen(true)}
+        className="fixed top-20 left-6 z-50 shadow-lg h-12 px-6 text-base font-semibold"
+        style={{
+          borderRadius: '24px',
+        }}
+      >
+        新建项目
+      </Button>
+
+      {/* 主内容区 - 两列布局 */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* 中央工作区 - 75% */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <BuilderWorkspace />
         </div>
 
-        {/* 右侧边栏 - 20% */}
-        <div className="w-[20%] min-w-[280px] max-w-[360px] flex-shrink-0">
+        {/* 右侧边栏 - 25% */}
+        <div className="w-[25%] min-w-[300px] max-w-[400px] flex-shrink-0">
           <DecisionSidebarPanel />
         </div>
       </div>
