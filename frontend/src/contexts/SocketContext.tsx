@@ -23,7 +23,10 @@ export function SocketProvider({ children }: SocketProviderProps) {
   const { user } = useAuth()
 
   useEffect(() => {
-    if (user) {
+    // In development mode with VITE_SKIP_AUTH, always connect
+    const skipAuth = import.meta.env.VITE_SKIP_AUTH === 'true'
+
+    if (user || skipAuth) {
       initializeSocket()
     } else {
       disconnectSocket()
@@ -36,12 +39,15 @@ export function SocketProvider({ children }: SocketProviderProps) {
 
   const initializeSocket = () => {
     const token = localStorage.getItem('auth_token')
-    
+    const skipAuth = import.meta.env.VITE_SKIP_AUTH === 'true'
+
     const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:3001', {
-      auth: {
-        token
-      },
-      transports: ['websocket', 'polling']
+      auth: skipAuth ? { skipAuth: true } : { token },
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5
     })
 
     newSocket.on('connect', () => {
